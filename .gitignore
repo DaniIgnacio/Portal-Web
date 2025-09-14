@@ -1,0 +1,26 @@
+# Ignorar carpetas de dependencias
+node_modules/
+portalfrontend/node_modules/
+portalbackend/node_modules/
+
+# Ignorar archivos de entorno
+.env
+.env
+portalfrontend/.env
+portalbackend/.env
+
+# Ignorar logs, builds y cachés
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+*.log
+*.jsonc
+coverage/
+
+# Ignorar directorios de build del frontend
+portalfrontend/build/
+portalfrontend/dist/
+
+# Ignorar directorios de build/temp del backend (si existen)
+portalbackend/dist/

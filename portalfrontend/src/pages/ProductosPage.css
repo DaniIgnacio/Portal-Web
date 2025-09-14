@@ -1,0 +1,39 @@
+/* src/pages/ProductosPage.css */
+
+.productos-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.add-product-button {
+  background-color: #1abc9c; /* Verde azulado, color primario del sidebar */
+  color: white;
+  font-weight: bold;
+  font-size: 15px;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.add-product-button:hover {
+  background-color: #16a085; /* Un tono más oscuro */
+  transform: translateY(-2px); /* Pequeño efecto de elevación */
+}
+
+.add-product-button {
+  background-color: #4D7C8A; /* Air Force Blue */
+  color: white;
+  /* ... (el resto de los estilos se mantienen) ... */
+}
+
+.add-product-button:hover {
+  background-color: #1B4079; /* Yale Blue */
+  transform: translateY(-2px);
+}

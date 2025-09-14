@@ -1,0 +1,91 @@
+/* src/pages/AuthForm.css */
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f4f6f9; /* Un fondo gris muy claro */
+}
+
+.auth-card {
+  background-color: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+  border-top: 5px solid #1B4079; /* Yale Blue */
+}
+
+.auth-header h2 {
+  color: #1B4079; /* Yale Blue */
+  margin: 0 0 10px 0;
+  font-size: 26px;
+}
+
+.auth-header p {
+  color: #6c757d;
+  margin-bottom: 30px;
+}
+
+.auth-form .form-group {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.auth-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: #4D7C8A; /* Air Force Blue */
+  box-shadow: 0 0 0 3px rgba(77, 124, 138, 0.2);
+}
+
+.auth-button {
+  width: 100%;
+  padding: 15px;
+  background-color: #1B4079; /* Yale Blue */
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.auth-button:hover {
+  background-color: #4D7C8A; /* Air Force Blue */
+}
+
+.auth-footer {
+  margin-top: 25px;
+  color: #6c757d;
+}
+
+.auth-footer a {
+  color: #1B4079; /* Yale Blue */
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}

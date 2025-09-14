@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es6",                     // Compila a una versión de JS compatible
+    "module": "commonjs",                // Usa el sistema de módulos de Node.js
+    "outDir": "./dist",                  // Carpeta de salida para el código compilado
+    "rootDir": "./src",                  // Carpeta raíz del código fuente
+    "esModuleInterop": true,             // Mejora la compatibilidad entre módulos
+    "strict": true,                      // Habilita todas las revisiones de tipo estrictas
+    "skipLibCheck": true,                // Omite la revisión de tipos en archivos de declaración
+    "moduleResolution": "node"           // Estrategia de búsqueda de módulos de Node.js
+  },
+  "include": ["src/**/*"]                // Asegura que solo se compile la carpeta src
+}

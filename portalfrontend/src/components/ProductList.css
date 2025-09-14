@@ -1,0 +1,72 @@
+
+
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden; 
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.product-table th, .product-table td {
+  padding: 16px 20px;
+  text-align: left;
+}
+
+.product-table thead th {
+  background-color: #f4f6f9;
+  font-weight: 600;
+  color: #6c757d;
+  font-size: 14px;
+  border-bottom: 2px solid #e3e6f0;
+}
+
+.product-table tbody tr {
+  border-bottom: 1px solid #e3e6f0;
+  transition: background-color 0.2s ease;
+}
+
+.product-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.product-table tbody tr:hover {
+  background-color: #f8f9fa; 
+}
+
+
+.action-button {
+  border: 1px solid #e3e6f0;
+  background-color: transparent;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.edit-button:hover {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #e74c3c;
+  border-color: #e74c3c;
+  color: white;
+}
+
+
+.edit-button:hover {
+  background-color: #4D7C8A; 
+  border-color: #4D7C8A;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #e74c3c; 
+  border-color: #e74c3c;
+  color: white;
+}
