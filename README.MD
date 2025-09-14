@@ -25,47 +25,47 @@ Asegúrate de tener instalado lo siguiente:
 - [npm](https://www.npmjs.com/) (viene con Node.js)
 - [Git](https://git-scm.com/)
 
-#### Variables de Entorno
+### 2. Variables de Entorno
 
 Backend (`portalbackend/.env`):
 Crea un archivo `.env` en `portalbackend/` y añade:
-SUPABASE_URL=TU_SUPABASE_PROYECT_URL
-SUPABASE_SERVICE_KEY=TU_SUPABASE_SERVICE_ROLE_KEY
+`SUPABASE_URL=TU_SUPABASE_PROYECT_URL`
+`SUPABASE_SERVICE_KEY=TU_SUPABASE_SERVICE_ROLE_KEY`
 
 
 Frontend (portalfrontend/.env):
 Crea un archivo .env en portalfrontend/ y añade:
-REACT_APP_SUPABASE_URL=TU_SUPABASE_PROYECT_URL
-REACT_APP_SUPABASE_ANON_KEY=TU_SUPABASE_ANON_KEY
+`REACT_APP_SUPABASE_URL=TU_SUPABASE_PROYECT_URL`
+`REACT_APP_SUPABASE_ANON_KEY=TU_SUPABASE_ANON_KEY`
 
 
-3. Clonar el Repositorio
+### 3. Clonar el Repositorio
 Bash
 
 git clone [https://github.com/tu-usuario/nombre-de-tu-repo.git](https://github.com/tu-usuario/nombre-de-tu-repo.git)
 cd portalWeb
 
-4. Configuración del Backend
+### 4. Configuración del Backend
 
-npm install
-npm install -D typescript @types/express @types/node @types/cors ts-node-dev dotenv @supabase/supabase-js
-npx tsc --init
-
-
-5. Configuración del Frontend
-
-npm install
-npm install @supabase/supabase-js react-router-dom react-icons
+`npm install`
+`npm install -D typescript @types/express @types/node @types/cors ts-node-dev dotenv @supabase/supabase-js`
+`npx tsc --init`
 
 
-6. Ejecutar la Aplicación
+### 5. Configuración del Frontend
+
+`npm install`
+`npm install @supabase/supabase-js react-router-dom react-icons`
+
+
+### 6. Ejecutar la Aplicación
 Iniciar el Backend Desde la carpeta portalbackend:
 
-npm run dev
+`npm run dev`
 El servidor backend se ejecutará en http://localhost:5000.
 
 
 Iniciar el Frontend
 Desde la carpeta portalfrontend:
 
-npm start
+`npm start`
