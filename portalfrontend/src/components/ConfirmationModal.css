@@ -31,22 +31,36 @@
   gap: 15px;
 }
 
+/* Estilos base para AMBOS botones del modal de confirmación */
+.confirm-modal-footer button {
+  padding: 10px 20px;
+  border-radius: 6px; /* Bordes ligeramente más suaves */
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  border: none; /* <-- ¡ESTO ELIMINA EL BORDE NEGRO! */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Una sombra suave, no un borde */
+  font-weight: bold; /* Hacer el texto de los botones más audaz */
+}
 
+/* Botón secundario (Cancelar) - Usando Cambridge Blue y hover Air Force Blue */
 .button-secondary {
-  background-color: #7F9C96; 
+  background-color: #7F9C96; /* Cambridge Blue */
   color: white;
 }
 
 .button-secondary:hover {
-  background-color: #4D7C8A; 
+  background-color: #4D7C8A; /* Air Force Blue */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-
+/* Botón de confirmación (acción destructiva) - Se mantiene en rojo por UX */
 .button-danger {
-  background-color: #e74c3c;
+  background-color: #e74c3c; /* Rojo estándar para acciones destructivas */
   color: white;
 }
 
 .button-danger:hover {
-  background-color: #c0392b;
+  background-color: #c0392b; /* Tono de rojo más oscuro en hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
