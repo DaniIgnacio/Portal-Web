@@ -1,6 +1,6 @@
 // src/pages/Registro.tsx
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient'; // Asegúrate de tener este archivo
+import { supabase } from '../../supabaseClient'; // Asegúrate de tener este archivo
 import { Link, useNavigate } from 'react-router-dom'; // Importa useNavigate para redireccionar
 import './AuthForm.css'; // <-- Importar el CSS de estilos
 

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Product } from './ProductList';
+import { Product } from '../products/ProductList';
 import './ConfirmationModal.css';
 
 interface ConfirmationModalProps {

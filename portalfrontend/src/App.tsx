@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
-import DashboardLayout from './components/DashboardLayout';
-import LoginProveedor from './pages/Login';
-import RegistroProveedor from './pages/Registro';
+import DashboardLayout from './components/layout/DashboardLayout';
+import LoginProveedor from './components/auth/Login';
+import RegistroProveedor from './components/auth/Registro';
 import CategoriasPage from './pages/CategoriasPage';
 import ProductosPage from './pages/ProductosPage';
+import { useNotifications } from './hooks/useNotifications'; // <-- Importa el hook
+import NotificationContainer from './components/common/Notification'; // <-- Importa el contenedor
 
 import './App.css';
 
 function App() {
+  const { notifications, addNotification, dismissNotification } = useNotifications();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 

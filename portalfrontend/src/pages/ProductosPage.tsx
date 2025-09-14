@@ -1,10 +1,10 @@
 // src/pages/ProductosPage.tsx
 import React, { useState, useEffect } from 'react';
-import ProductList, { Product } from '../components/ProductList';
-import AddEditProductModal from '../components/AddEditProductModal';
-import AddIcon from '../components/AddIcon';
+import ProductList, { Product } from '../components/products/ProductList';
+import AddEditProductModal from '../components/products/AddEditProductModal';
+import AddIcon from '../components/common/AddIcon';
 import './ProductosPage.css';
-import ConfirmationModal from '../components/ConfirmationModal';
+import ConfirmationModal from '../components/common/ConfirmationModal';
 
 // La URL de tu backend
 const API_URL = 'http://localhost:5000/api';
