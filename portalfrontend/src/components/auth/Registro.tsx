@@ -1,14 +1,16 @@
 // src/pages/Registro.tsx
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient'; // Asegúrate de tener este archivo
-import { Link, useNavigate } from 'react-router-dom'; // Importa useNavigate para redireccionar
+import { Link } from 'react-router-dom';
 import './AuthForm.css'; // <-- Importar el CSS de estilos
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationContainer from '../common/Notification';
 
 const Registro = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const navigate = useNavigate(); // Hook para redireccionar
+  const { notifications, addNotification, dismissNotification } = useNotifications();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,10 +22,10 @@ const Registro = () => {
     });
 
     if (error) {
-      alert(`Error de registro: ${error.message}`);
+      addNotification(`Error de registro: ${error.message}`, 'error');
     } else {
-      alert('¡Registro exitoso! Revisa tu correo para confirmar la cuenta.');
-      navigate('/login'); // Redirigir al login después del registro
+      addNotification('¡Registro exitoso! Revisa tu correo para confirmar la cuenta.', 'success');
+      // No redirigir automáticamente, permitir que el usuario vaya al login manualmente
     }
     setLoading(false);
   };
@@ -68,6 +70,7 @@ const Registro = () => {
           </p>
         </div>
       </div>
+      <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
     </div>
   );
 };

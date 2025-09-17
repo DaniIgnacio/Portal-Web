@@ -3,12 +3,15 @@ import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient'; // Asegúrate de tener este archivo
 import { Link, useNavigate } from 'react-router-dom'; // Importa useNavigate para redireccionar
 import './AuthForm.css'; // <-- Importar el CSS de estilos
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationContainer from '../common/Notification';
 
 const Login = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate(); // Hook para redireccionar
+  const { notifications, addNotification, dismissNotification } = useNotifications();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,9 +23,9 @@ const Login = () => {
     });
 
     if (error) {
-      alert(`Error de inicio de sesión: ${error.message}`);
+      addNotification(`Error de inicio de sesión: ${error.message}`, 'error');
     } else {
-      alert('¡Inicio de sesión exitoso!');
+      addNotification('¡Inicio de sesión exitoso!', 'success');
       navigate('/dashboard'); // Redirigir al dashboard después de iniciar sesión
     }
     setLoading(false);
@@ -68,6 +71,7 @@ const Login = () => {
           </p>
         </div>
       </div>
+      <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
     </div>
   );
 };

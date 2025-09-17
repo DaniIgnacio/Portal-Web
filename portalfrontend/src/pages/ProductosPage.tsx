@@ -5,6 +5,8 @@ import AddEditProductModal from '../components/products/AddEditProductModal';
 import AddIcon from '../components/common/AddIcon';
 import './ProductosPage.css';
 import ConfirmationModal from '../components/common/ConfirmationModal';
+import { useNotifications } from '../hooks/useNotifications';
+import NotificationContainer from '../components/common/Notification';
 
 // La URL de tu backend
 const API_URL = 'http://localhost:5000/api';
@@ -17,6 +19,8 @@ const ProductosPage = () => {
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  const { notifications, addNotification, dismissNotification } = useNotifications();
 
   // --- Cargar productos del backend al iniciar ---
   useEffect(() => {
@@ -52,11 +56,14 @@ const handleSaveProduct = async (product: Product) => {
         const updatedProduct = await response.json();
         // Actualizamos el estado local reemplazando el producto antiguo por el nuevo
         setProducts(products.map(p => (p.id === updatedProduct.id ? updatedProduct : p)));
+        addNotification(`Producto "${updatedProduct.nombre}" actualizado correctamente.`, 'success');
       } else {
         console.error('Falló la actualización del producto');
+        addNotification('Error al actualizar el producto.', 'error');
       }
     } catch (error) {
       console.error('Error de red al actualizar:', error);
+      addNotification('Error de red al actualizar el producto.', 'error');
     }
   } 
   // --- LÓGICA PARA CREAR UN PRODUCTO NUEVO ---
@@ -73,11 +80,14 @@ const handleSaveProduct = async (product: Product) => {
       if (response.ok) {
         const addedProductWithId = await response.json();
         setProducts([...products, addedProductWithId]);
+        addNotification(`Producto "${addedProductWithId.nombre}" creado correctamente.`, 'success');
       } else {
         console.error('Falló la creación del producto');
+        addNotification('Error al crear el producto.', 'error');
       }
     } catch (error) {
       console.error('Error de red al crear:', error);
+      addNotification('Error de red al crear el producto.', 'error');
     }
   }
   closeModal();
@@ -91,9 +101,19 @@ const handleSaveProduct = async (product: Product) => {
    const handleConfirmDelete = async () => {
     if (!productToDelete) return;
 
-    await fetch(`${API_URL}/productos/${productToDelete.id}`, { method: 'DELETE' });
-    setProducts(products.filter(p => p.id !== productToDelete.id));
-    
+    try {
+      const response = await fetch(`${API_URL}/productos/${productToDelete.id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setProducts(products.filter(p => p.id !== productToDelete.id));
+        addNotification(`Producto "${productToDelete.nombre}" eliminado correctamente.`, 'success');
+      } else {
+        addNotification('Error al eliminar el producto.', 'error');
+      }
+    } catch (error) {
+      console.error('Error de red al eliminar:', error);
+      addNotification('Error de red al eliminar el producto.', 'error');
+    }
+
     // Cerrar el modal y limpiar el estado
     setIsConfirmModalOpen(false);
     setProductToDelete(null);
@@ -118,6 +138,8 @@ const handleSaveProduct = async (product: Product) => {
   if (isLoading) return <div>Cargando productos...</div>;
 
   
+  const lowStockProducts = products.filter(p => p.stock <= 5);
+
   return (
     <div>
       {/* ... (el header de la página se mantiene igual) ... */}
@@ -128,21 +150,33 @@ const handleSaveProduct = async (product: Product) => {
           Añadir Nuevo Producto
         </button>
       </div>
-      
+
+      {/* Alerta de stock bajo */}
+      {lowStockProducts.length > 0 && (
+        <div className="stock-alert">
+          <h3>⚠️ Alerta de Stock Bajo</h3>
+          <ul>
+            {lowStockProducts.map(p => (
+              <li key={p.id}>{p.nombre} - Stock: {p.stock}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* 5. Pasamos la nueva función handleDeleteRequest a la lista */}
-      <ProductList 
-        products={products} 
+      <ProductList
+        products={products}
         onEdit={handleEdit}
-        onDelete={handleDeleteRequest} 
+        onDelete={handleDeleteRequest}
       />
-        
+
       <AddEditProductModal
         isOpen={isModalOpen}
         onClose={closeModal}
         onSave={handleSaveProduct}
         productToEdit={productToEdit}
       />
-      
+
       {/* 6. Añadimos el nuevo modal al final */}
       <ConfirmationModal
         isOpen={isConfirmModalOpen}
@@ -151,6 +185,9 @@ const handleSaveProduct = async (product: Product) => {
         title="Confirmar Eliminación"
         message={`¿Estás seguro de que quieres eliminar el producto "${productToDelete?.nombre}"? Esta acción no se puede deshacer.`}
       />
+
+      {/* Contenedor de notificaciones */}
+      <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
     </div>
   );
 };

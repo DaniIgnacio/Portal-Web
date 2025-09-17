@@ -5,7 +5,7 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<NotificationProps[]>([]);
 
   const addNotification = useCallback((message: string, type: NotificationProps['type']) => {
-    const id = Date.now().toString(); // Genera un ID único simple
+    const id = Date.now().toString(); 
     const newNotification: NotificationProps = { id, message, type };
     setNotifications((prev) => [...prev, newNotification]);
   }, []);
