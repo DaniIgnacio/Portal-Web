@@ -1,0 +1,96 @@
+/* src/components/ferreterias/FerreteriaList.css */
+
+.ferreteria-list {
+  padding: 20px;
+}
+
+.no-ferreterias {
+  text-align: center;
+  padding: 40px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.no-ferreterias p {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.ferreteria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.ferreteria-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.ferreteria-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ferreteria-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.ferreteria-header h3 {
+  margin: 0;
+  color: #495057;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.ferreteria-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-button,
+.delete-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  color: #6c757d;
+}
+
+.edit-button:hover {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.delete-button:hover {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.ferreteria-details {
+  padding: 20px;
+}
+
+.ferreteria-details p {
+  margin: 8px 0;
+  color: #495057;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.ferreteria-details strong {
+  color: #343a40;
+  font-weight: 600;
+}

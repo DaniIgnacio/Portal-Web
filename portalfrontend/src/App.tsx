@@ -7,8 +7,9 @@ import LoginProveedor from './components/auth/Login';
 import RegistroProveedor from './components/auth/Registro';
 import CategoriasPage from './pages/CategoriasPage';
 import ProductosPage from './pages/ProductosPage';
-import { useNotifications } from './hooks/useNotifications'; // <-- Importa el hook
-import NotificationContainer from './components/common/Notification'; // <-- Importa el contenedor
+import FerreteriasPage from './pages/FerreteriasPage';
+import { useNotifications } from './hooks/useNotifications';
+import NotificationContainer from './components/common/Notification';
 
 import './App.css';
 
@@ -20,7 +21,7 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setLoading(false); 
+      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -36,35 +37,30 @@ function App() {
 
   return (
     <Routes>
-      {}
-      <Route 
-        path="/login" 
-        element={!session ? <LoginProveedor /> : <Navigate to="/dashboard" />} 
+      <Route
+        path="/login"
+        element={!session ? <LoginProveedor /> : <Navigate to="/dashboard" />}
       />
-      <Route 
-        path="/registro" 
-        element={!session ? <RegistroProveedor /> : <Navigate to="/dashboard" />} 
-      />
-
-      {}
-      <Route 
-        path="/" 
-        element={session ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} 
+      <Route
+        path="/registro"
+        element={!session ? <RegistroProveedor /> : <Navigate to="/dashboard" />}
       />
 
-      {}
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/"
+        element={session ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
+      />
+
+      <Route
+        path="/dashboard"
         element={session ? <DashboardLayout /> : <Navigate to="/login" />}
       >
-        {}
-        <Route index element={<Navigate to="productos" replace />} /> 
+        <Route index element={<Navigate to="productos" replace />} />
         <Route path="productos" element={<ProductosPage />} />
         <Route path="categorias" element={<CategoriasPage />} />
-        {}
+        <Route path="ferreterias" element={<FerreteriasPage />} />
       </Route>
 
-      {}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

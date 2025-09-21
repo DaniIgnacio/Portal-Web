@@ -1,0 +1,110 @@
+/* src/pages/FerreteriasPage.css */
+
+.ferreterias-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 0 20px;
+}
+
+.ferreterias-page-header h2 {
+  color: #495057;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.add-ferreteria-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.add-ferreteria-button:hover {
+  background-color: #218838;
+}
+
+.add-ferreteria-button:active {
+  background-color: #1e7e34;
+}
+
+.error-message {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px;
+  text-align: center;
+}
+
+.error-message p {
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+}
+
+.retry-button {
+  padding: 10px 20px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: #c82333;
+}
+
+.stock-alert {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px;
+}
+
+.stock-alert h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+}
+
+.stock-alert ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.stock-alert li {
+  margin: 5px 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .ferreterias-page-header {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .ferreterias-page-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .add-ferreteria-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

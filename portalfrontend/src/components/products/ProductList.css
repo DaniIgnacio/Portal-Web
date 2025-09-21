@@ -1,11 +1,9 @@
-
-
 .product-table {
   width: 100%;
   border-collapse: collapse;
   background-color: #ffffff;
   border-radius: 8px;
-  overflow: hidden; 
+  overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -32,9 +30,8 @@
 }
 
 .product-table tbody tr:hover {
-  background-color: #f8f9fa; 
+  background-color: #f8f9fa;
 }
-
 
 .action-button {
   border: 1px solid #e3e6f0;
@@ -58,15 +55,31 @@
   color: white;
 }
 
-
 .edit-button:hover {
-  background-color: #4D7C8A; 
+  background-color: #4D7C8A;
   border-color: #4D7C8A;
   color: white;
 }
 
 .delete-button:hover {
-  background-color: #e74c3c; 
+  background-color: #e74c3c;
   border-color: #e74c3c;
   color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .product-table {
+    font-size: 0.9rem;
+  }
+
+  .product-table th,
+  .product-table td {
+    padding: 8px 12px;
+  }
+
+  .action-button {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
 }
