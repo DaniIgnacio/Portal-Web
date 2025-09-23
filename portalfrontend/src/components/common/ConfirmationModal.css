@@ -1,66 +1,100 @@
+/* src/components/common/ConfirmationModal.css - Diseño Moderno y Minimalista */
 
-
-.confirm-modal-content {
-  background-color: white;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  width: 100%;
-  max-width: 420px;
-  color: #333;
-  text-align: center;
-  border-top: 5px solid #1B4079; 
+.confirmation-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4); /* Fondo oscuro semitransparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(3px); /* Blur sutil */
 }
 
-.confirm-modal-header h3 {
-  margin: 0 0 10px 0;
-  font-size: 22px;
-  color: #1B4079; 
+.confirmation-modal-content {
+    background-color: var(--color-panel-bg);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    width: 100%;
+    max-width: 450px;
+    position: relative;
+    border: 1px solid var(--color-border-light);
+    text-align: center;
 }
 
-.confirm-modal-body p {
-  margin: 0 0 25px 0;
-  color: #6c757d;
-  font-size: 16px;
-  line-height: 1.5;
+.confirmation-modal-title {
+    font-family: var(--font-secondary);
+    font-size: 1.8rem;
+    color: var(--color-dark-text);
+    margin-bottom: var(--spacing-md);
+    font-weight: 700;
 }
 
-.confirm-modal-footer {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
+.confirmation-modal-message {
+    font-size: 1rem;
+    color: var(--color-secondary-text);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
 }
 
-/* Estilos base para AMBOS botones del modal de confirmación */
-.confirm-modal-footer button {
-  padding: 10px 20px;
-  border-radius: 6px; /* Bordes ligeramente más suaves */
-  font-size: 15px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-  border: none; /* <-- ¡ESTO ELIMINA EL BORDE NEGRO! */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Una sombra suave, no un borde */
-  font-weight: bold; /* Hacer el texto de los botones más audaz */
+.confirmation-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
 }
 
-/* Botón secundario (Cancelar) - Usando Cambridge Blue y hover Air Force Blue */
-.button-secondary {
-  background-color: #7F9C96; /* Cambridge Blue */
-  color: white;
+.confirmation-modal-actions .button-primary {
+    background-color: var(--color-error); /* Usar rojo para confirmar eliminación */
+    color: var(--color-white);
+    box-shadow: var(--shadow-sm);
 }
 
-.button-secondary:hover {
-  background-color: #4D7C8A; /* Air Force Blue */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.confirmation-modal-actions .button-primary:hover {
+    background-color: #C0222F;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
-/* Botón de confirmación (acción destructiva) - Se mantiene en rojo por UX */
-.button-danger {
-  background-color: #e74c3c; /* Rojo estándar para acciones destructivas */
-  color: white;
+.confirmation-modal-actions .button-secondary {
+    background-color: var(--color-light-bg);
+    color: var(--color-dark-text);
+    border: 1px solid var(--color-border-light);
+    box-shadow: var(--shadow-sm);
 }
 
-.button-danger:hover {
-  background-color: #c0392b; /* Tono de rojo más oscuro en hover */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.confirmation-modal-actions .button-secondary:hover {
+    background-color: #E9ECEF;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Media Queries para responsividad */
+@media (max-width: 600px) {
+    .confirmation-modal-content {
+        margin: var(--spacing-md);
+        padding: var(--spacing-lg) var(--spacing-md);
+        border-radius: var(--border-radius-md);
+    }
+
+    .confirmation-modal-title {
+        font-size: 1.6rem;
+    }
+
+    .confirmation-modal-message {
+        font-size: 0.95rem;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .confirmation-modal-actions {
+        flex-direction: column-reverse;
+        gap: var(--spacing-sm);
+    }
+
+    .confirmation-modal-actions button {
+        width: 100%;
+    }
 }

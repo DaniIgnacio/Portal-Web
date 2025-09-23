@@ -1,39 +1,59 @@
 // src/pages/Login.tsx
 import React, { useState } from 'react';
-import { supabase } from '../../supabaseClient'; // Asegúrate de tener este archivo
-import { Link, useNavigate } from 'react-router-dom'; // Importa useNavigate para redireccionar
-import './AuthForm.css'; // <-- Importar el CSS de estilos
+// La línea de SupabaseClient ya no es necesaria
+// import { supabase } from '../../supabaseClient';
+import { Link, useNavigate } from 'react-router-dom';
+import './AuthForm.css';
 import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
 
-const Login = () => {
+interface LoginProps {
+  setIsAuthenticated: (isAuthenticated: boolean) => void;
+}
+
+const Login: React.FC<LoginProps> = ({ setIsAuthenticated }) => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const navigate = useNavigate(); // Hook para redireccionar
+  const navigate = useNavigate();
   const { notifications, addNotification, dismissNotification } = useNotifications();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, contraseña: password }),
+      });
 
-    if (error) {
-      addNotification(`Error de inicio de sesión: ${error.message}`, 'error');
-    } else {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al iniciar sesión');
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      setIsAuthenticated(true);
       addNotification('¡Inicio de sesión exitoso!', 'success');
-      navigate('/dashboard'); // Redirigir al dashboard después de iniciar sesión
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Error en el inicio de sesión:', error);
+      addNotification(`Error de inicio de sesión: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="auth-container"> {/* Contenedor principal para centrar */}
-      <div className="auth-card"> {/* La tarjeta blanca */}
+    <div className="auth-container">
+      <div className="auth-card">
         <div className="auth-header">
           <h2>Bienvenido</h2>
           <p>Ingresa tus credenciales para acceder a tu portal.</p>

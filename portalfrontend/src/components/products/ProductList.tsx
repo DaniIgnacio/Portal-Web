@@ -49,13 +49,13 @@ const ProductList: React.FC<ProductListProps> = ({ products, onEdit, onDelete })
       <tbody>
         {products.map((product) => (
           <tr key={product.id_producto}>
-            <td>{product.nombre}</td>
-            <td>{product.sku}</td>
-            <td>${(product.precio / 100).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td>{product.stock}</td>
-            <td>{product.categoria?.nombre || 'Sin categoría'}</td>
-            <td>{product.ferreteria?.razon_social || 'Sin ferretería'}</td>
-            <td>
+            <td data-label="Nombre">{product.nombre}</td>
+            <td data-label="SKU">{product.sku}</td>
+            <td data-label="Precio">${(product.precio / 100).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td data-label="Stock">{product.stock}</td>
+            <td data-label="Categoría">{product.categoria?.nombre || 'Sin categoría'}</td>
+            <td data-label="Ferretería">{product.ferreteria?.razon_social || 'Sin ferretería'}</td>
+            <td data-label="Acciones">
               <button onClick={() => onEdit(product)} className="action-button edit-button">Editar</button>
               <button onClick={() => onDelete(product)} className="action-button delete-button">Eliminar</button>
             </td>

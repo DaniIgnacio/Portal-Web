@@ -1,6 +1,6 @@
 // src/pages/ProductosPage.tsx
 import React, { useState, useEffect } from 'react';
-import ProductList, { Product, Category, Ferreteria } from '../components/products/ProductList';
+import ProductList, { Product, Category } from '../components/products/ProductList';
 import AddEditProductModal from '../components/products/AddEditProductModal';
 import AddIcon from '../components/common/AddIcon';
 import './ProductosPage.css';
@@ -14,7 +14,6 @@ const API_URL = 'http://localhost:5000/api';
 const ProductosPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [ferreterias, setFerreterias] = useState<Ferreteria[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
@@ -25,106 +24,102 @@ const ProductosPage = () => {
 
   const { notifications, addNotification, dismissNotification } = useNotifications();
 
-  // --- Cargar productos, categorías y ferreterías del backend al iniciar ---
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      return { 'Authorization': `Bearer ${token}` };
+    }
+    return {};
+  };
+
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
+        const headers = getAuthHeaders();
+
         // Cargar productos
-        const productsResponse = await fetch(`${API_URL}/productos`);
+        const productsResponse = await fetch(`${API_URL}/productos`, { headers });
         if (productsResponse.ok) {
           const productsData = await productsResponse.json();
           setProducts(Array.isArray(productsData) ? productsData : []);
+        } else if (productsResponse.status === 401 || productsResponse.status === 403) {
+          addNotification('Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo.', 'error');
+          setProducts([]);
         } else {
           console.error('Error al cargar productos:', productsResponse.status);
+          addNotification(`Error al cargar productos: ${productsResponse.statusText || productsResponse.status}`, 'error');
           setProducts([]);
         }
 
-        // Cargar categorías
+        // Cargar categorías (las categorías son globales y no requieren id_ferreteria)
         const categoriesResponse = await fetch(`${API_URL}/categorias`);
         if (categoriesResponse.ok) {
           const categoriesData = await categoriesResponse.json();
           setCategories(Array.isArray(categoriesData) ? categoriesData : []);
         } else {
           console.error('Error al cargar categorías:', categoriesResponse.status);
+          addNotification(`Error al cargar categorías: ${categoriesResponse.statusText || categoriesResponse.status}`, 'error');
           setCategories([]);
         }
 
-        // Cargar ferreterías
-        const ferreteriasResponse = await fetch(`${API_URL}/ferreterias`);
-        if (ferreteriasResponse.ok) {
-          const ferreteriasData = await ferreteriasResponse.json();
-          setFerreterias(Array.isArray(ferreteriasData) ? ferreteriasData : []);
-        } else {
-          console.error('Error al cargar ferreterías:', ferreteriasResponse.status);
-          setFerreterias([]);
-        }
+        // La carga de ferreterías ya no es necesaria aquí
+
       } catch (error) {
         console.error('Error al cargar los datos:', error);
         setProducts([]);
         setCategories([]);
-        setFerreterias([]);
         setError('Error al cargar los datos del servidor');
+        addNotification('Error de red al cargar los datos.', 'error');
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [addNotification]);
 
-  // --- Lógica para guardar (Crear o Editar) ---
   const handleSaveProduct = async (product: Product) => {
-    // --- LÓGICA PARA EDITAR UN PRODUCTO EXISTENTE ---
+    const headers: HeadersInit = { 'Content-Type': 'application/json', ...getAuthHeaders() };
+    let url = `${API_URL}/productos`;
+    let method = 'POST';
+
     if (productToEdit) {
-      console.log('2. Enviando actualización (PUT) al backend:', product);
-      try {
-        const response = await fetch(`${API_URL}/productos/${product.id_producto}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(product),
-        });
-
-        if (response.ok) {
-          const updatedProduct = await response.json();
-          // Actualizamos el estado local reemplazando el producto antiguo por el nuevo
-          setProducts(products.map(p => (p.id_producto === updatedProduct.id_producto ? updatedProduct : p)));
-          addNotification(`Producto "${updatedProduct.nombre}" actualizado correctamente.`, 'success');
-        } else {
-          console.error('Falló la actualización del producto');
-          addNotification('Error al actualizar el producto.', 'error');
-        }
-      } catch (error) {
-        console.error('Error de red al actualizar:', error);
-        addNotification('Error de red al actualizar el producto.', 'error');
-      }
+      url = `${API_URL}/productos/${product.id_producto}`;
+      method = 'PUT';
     }
-    // --- LÓGICA PARA CREAR UN PRODUCTO NUEVO ---
-    else {
-      console.log('2. Enviando producto nuevo (POST) al backend:', product);
-      try {
-        const { id_producto, ...newProductData } = product; // Quitamos el id temporal
-        const response = await fetch(`${API_URL}/productos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newProductData),
-        });
 
-        if (response.ok) {
-          const addedProductWithId = await response.json();
-          setProducts([...products, addedProductWithId]);
-          addNotification(`Producto "${addedProductWithId.nombre}" creado correctamente.`, 'success');
+    try {
+      const { id_producto, id_ferreteria, ferreteria, ...productDataToSend } = product;
+      
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: JSON.stringify(productDataToSend),
+      });
+
+      if (response.ok) {
+        const savedProduct = await response.json();
+        if (method === 'POST') {
+          setProducts([...products, savedProduct]);
+          addNotification(`Producto \"${savedProduct.nombre}\" creado correctamente.`, 'success');
         } else {
-          console.error('Falló la creación del producto');
-          addNotification('Error al crear el producto.', 'error');
+          setProducts(products.map(p => (p.id_producto === savedProduct.id_producto ? savedProduct : p)));
+          addNotification(`Producto \"${savedProduct.nombre}\" actualizado correctamente.`, 'success');
         }
-      } catch (error) {
-        console.error('Error de red al crear:', error);
-        addNotification('Error de red al crear el producto.', 'error');
+      } else if (response.status === 401 || response.status === 403) {
+        addNotification('No autorizado para realizar esta acción. Por favor, inicia sesión de nuevo.', 'error');
+      } else {
+        const errorData = await response.json();
+        console.error(`Falló la ${method === 'POST' ? 'creación' : 'actualización'} del producto:`, errorData);
+        addNotification(`Error al ${method === 'POST' ? 'crear' : 'actualizar'} el producto: ${errorData.error || response.statusText}`, 'error');
       }
+    } catch (error) {
+      console.error('Error de red al guardar el producto:', error);
+      addNotification('Error de red al guardar el producto.', 'error');
     }
     closeModal();
   };
 
-  // --- Lógica para eliminar ---
   const handleDeleteRequest = (product: Product) => {
     setProductToDelete(product);
     setIsConfirmModalOpen(true);
@@ -133,22 +128,29 @@ const ProductosPage = () => {
   const handleConfirmDelete = async () => {
     if (!productToDelete) return;
 
+    const headers = getAuthHeaders();
     try {
-      const response = await fetch(`${API_URL}/productos/${productToDelete.id_producto}`, { method: 'DELETE' });
+      const response = await fetch(`${API_URL}/productos/${productToDelete.id_producto}`, {
+        method: 'DELETE',
+        headers: headers,
+      });
+
       if (response.ok) {
         setProducts(products.filter(p => p.id_producto !== productToDelete.id_producto));
-        addNotification(`Producto "${productToDelete.nombre}" eliminado correctamente.`, 'success');
+        addNotification(`Producto \"${productToDelete.nombre}\" eliminado correctamente.`, 'success');
+      } else if (response.status === 401 || response.status === 403) {
+        addNotification('No autorizado para eliminar este producto. Por favor, inicia sesión de nuevo.', 'error');
       } else {
-        addNotification('Error al eliminar el producto.', 'error');
+        const errorData = await response.json();
+        addNotification(`Error al eliminar el producto: ${errorData.error || response.statusText}`, 'error');
       }
     } catch (error) {
       console.error('Error de red al eliminar:', error);
       addNotification('Error de red al eliminar el producto.', 'error');
+    } finally {
+      setIsConfirmModalOpen(false);
+      setProductToDelete(null);
     }
-
-    // Cerrar el modal y limpiar el estado
-    setIsConfirmModalOpen(false);
-    setProductToDelete(null);
   };
 
   const handleEdit = (product: Product) => {
@@ -200,7 +202,6 @@ const ProductosPage = () => {
         </button>
       </div>
 
-      {/* Alerta de stock bajo */}
       {lowStockProducts.length > 0 && (
         <div className="stock-alert">
           <h3>⚠️ Alerta de Stock Bajo</h3>
@@ -224,7 +225,8 @@ const ProductosPage = () => {
         onSave={handleSaveProduct}
         productToEdit={productToEdit}
         categories={categories}
-        ferreterias={ferreterias}
+        // Ya no necesitamos pasar ferreterias al modal porque el backend maneja la asociación
+        // ferreterias={ferreterias}
       />
 
       <ConfirmationModal
@@ -232,10 +234,9 @@ const ProductosPage = () => {
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={handleConfirmDelete}
         title="Confirmar Eliminación"
-        message={`¿Estás seguro de que quieres eliminar el producto "${productToDelete?.nombre}"? Esta acción no se puede deshacer.`}
+        message={`¿Estás seguro de que quieres eliminar el producto \"${productToDelete?.nombre}\"? Esta acción no se puede deshacer.`}
       />
 
-      {/* Contenedor de notificaciones */}
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
     </div>
   );

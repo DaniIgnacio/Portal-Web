@@ -43,7 +43,6 @@ router.post('/ferreterias', async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        console.log('Ferretería creada:', data);
         res.status(201).json(data[0]);
     } catch (error) {
         console.error('Error al crear ferretería:', error);

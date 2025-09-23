@@ -1,4 +1,4 @@
-import { Product, Category, Ferreteria } from './ProductList';
+import { Product, Category } from './ProductList';
 import './AddEditProductModal.css';
 import React, { useState, useEffect } from 'react';
 
@@ -8,7 +8,7 @@ interface ModalProps {
   onSave: (product: Product) => void;
   productToEdit: Product | null;
   categories: Category[];
-  ferreterias: Ferreteria[];
+  // ferreterias: Ferreteria[]; // Ya no es necesario
 }
 
 const AddEditProductModal: React.FC<ModalProps> = ({
@@ -17,7 +17,7 @@ const AddEditProductModal: React.FC<ModalProps> = ({
   onSave,
   productToEdit,
   categories,
-  ferreterias
+  // ferreterias // Ya no es necesario
 }) => {
   const [product, setProduct] = useState<Product>({
     id_producto: '',
@@ -26,7 +26,7 @@ const AddEditProductModal: React.FC<ModalProps> = ({
     precio: 0,
     stock: 0,
     id_categoria: '',
-    id_ferreteria: ''
+    id_ferreteria: '' // id_ferreteria se mantendrá en el estado pero no se modificará desde aquí
   });
 
   useEffect(() => {
@@ -40,7 +40,7 @@ const AddEditProductModal: React.FC<ModalProps> = ({
         precio: 0,
         stock: 0,
         id_categoria: '',
-        id_ferreteria: ''
+        id_ferreteria: '' // Se inicializa vacío, el backend lo asignará
       });
     }
   }, [productToEdit, isOpen]);
@@ -48,11 +48,10 @@ const AddEditProductModal: React.FC<ModalProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (name === 'precio') {
-      // Convertir el precio a centavos para enviar al backend
       const numericValue = parseFloat(value) || 0;
       setProduct(prev => ({
         ...prev,
-        [name]: Math.round(numericValue * 100), // Convertir a centavos
+        [name]: Math.round(numericValue * 100),
       }));
     } else {
       setProduct(prev => ({
@@ -126,7 +125,8 @@ const AddEditProductModal: React.FC<ModalProps> = ({
               </select>
             </div>
 
-            <div className="form-group">
+            {/* El campo de Ferretería ya no es necesario aquí, el backend lo asigna automáticamente */}
+            {/* <div className="form-group">
               <label htmlFor="id_ferreteria">Ferretería</label>
               <select
                 id="id_ferreteria"
@@ -142,7 +142,7 @@ const AddEditProductModal: React.FC<ModalProps> = ({
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
           </div>
 
           <div className="modal-footer">

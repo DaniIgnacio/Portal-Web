@@ -20,34 +20,41 @@ const CategoryList: React.FC<CategoryListProps> = ({ categories, onEdit, onDelet
       {categories.length === 0 ? (
         <p className="no-categories">No hay categorías disponibles.</p>
       ) : (
-        <div className="categories-grid">
-          {categories.map((category) => (
-            <div key={category.id_categoria} className="category-card">
-              <div className="category-header">
-                <h3>{category.nombre}</h3>
-                <div className="category-actions">
-                  <button
-                    onClick={() => onEdit(category)}
-                    className="edit-button"
-                    title="Editar categoría"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    onClick={() => onDelete(category)}
-                    className="delete-button"
-                    title="Eliminar categoría"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-              {category.descripcion && (
-                <p className="category-description">{category.descripcion}</p>
-              )}
-            </div>
-          ))}
-        </div>
+        <table className="category-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {categories.map((category) => (
+              <tr key={category.id_categoria}>
+                <td data-label="Nombre">{category.nombre}</td>
+                <td data-label="Descripción">{category.descripcion || 'N/A'}</td>
+                <td data-label="Acciones">
+                  <div className="action-buttons">
+                    <button
+                      onClick={() => onEdit(category)}
+                      className="action-button edit-button"
+                      title="Editar categoría"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => onDelete(category)}
+                      className="action-button delete-button"
+                      title="Eliminar categoría"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

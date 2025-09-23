@@ -1,43 +1,69 @@
-// src/pages/Registro.tsx
+ // src/pages/Registro.tsx
 import React, { useState } from 'react';
-import { supabase } from '../../supabaseClient'; // Asegúrate de tener este archivo
-import { Link } from 'react-router-dom';
-import './AuthForm.css'; // <-- Importar el CSS de estilos
+// La línea de SupabaseClient ya no es necesaria
+// import { supabase } from '../../supabaseClient';
+import { Link, useNavigate } from 'react-router-dom';
+import './AuthForm.css';
 import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
 
 const Registro = () => {
+  const [nombre, setNombre] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [idFerreteria, setIdFerreteria] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
   const { notifications, addNotification, dismissNotification } = useNotifications();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    });
+    try {
+      const response = await fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nombre, email, contraseña: password, id_ferreteria: idFerreteria.trim() }),
+      });
 
-    if (error) {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al registrar usuario');
+      }
+
+      addNotification('¡Registro exitoso! Ya puedes iniciar sesión.', 'success');
+      navigate('/login');
+    } catch (error: any) {
+      console.error('Error en el registro:', error);
       addNotification(`Error de registro: ${error.message}`, 'error');
-    } else {
-      addNotification('¡Registro exitoso! Revisa tu correo para confirmar la cuenta.', 'success');
-      // No redirigir automáticamente, permitir que el usuario vaya al login manualmente
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="auth-container"> {/* Contenedor principal para centrar */}
-      <div className="auth-card"> {/* La tarjeta blanca */}
+    <div className="auth-container">
+      <div className="auth-card">
         <div className="auth-header">
           <h2>Crea tu Cuenta</h2>
           <p>Ingresa tus datos para registrarte.</p>
         </div>
         <form className="auth-form" onSubmit={handleRegister}>
+          <div className="form-group">
+            <label htmlFor="nombre">Nombre</label>
+            <input
+              id="nombre"
+              type="text"
+              placeholder="Tu nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              required
+            />
+          </div>
           <div className="form-group">
             <label htmlFor="email">Correo Electrónico</label>
             <input
@@ -57,6 +83,17 @@ const Registro = () => {
               placeholder="Tu contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="idFerreteria">ID de Ferretería</label>
+            <input
+              id="idFerreteria"
+              type="text"
+              placeholder="ID de tu ferretería"
+              value={idFerreteria}
+              onChange={(e) => setIdFerreteria(e.target.value)}
               required
             />
           </div>

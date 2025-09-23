@@ -25,43 +25,47 @@ const FerreteriaList: React.FC<FerreteriaListProps> = ({ ferreterias, onEdit, on
   return (
     <div className="ferreteria-list">
       {ferreterias.length === 0 ? (
-        <div className="no-ferreterias">
-          <p>No hay ferreterías registradas.</p>
-        </div>
+        <p className="no-ferreterias">No hay ferreterías registradas.</p>
       ) : (
-        <div className="ferreteria-grid">
-          {ferreterias.map((ferreteria) => (
-            <div key={ferreteria.id_ferreteria} className="ferreteria-card">
-              <div className="ferreteria-header">
-                <h3>{ferreteria.razon_social}</h3>
-                <div className="ferreteria-actions">
-                  <button
-                    onClick={() => onEdit(ferreteria)}
-                    className="edit-button"
-                    title="Editar"
-                  >
-                    <EditIcon />
-                  </button>
-                  <button
-                    onClick={() => onDelete(ferreteria)}
-                    className="delete-button"
-                    title="Eliminar"
-                  >
-                    <DeleteIcon />
-                  </button>
-                </div>
-              </div>
-              <div className="ferreteria-details">
-                <p><strong>RUT:</strong> {ferreteria.rut}</p>
-                <p><strong>Dirección:</strong> {ferreteria.direccion}</p>
-                {ferreteria.telefono && (
-                  <p><strong>Teléfono:</strong> {ferreteria.telefono}</p>
-                )}
-                <p><strong>API Key:</strong> {ferreteria.api_key}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <table className="ferreteria-table">
+          <thead>
+            <tr>
+              <th>RUT</th>
+              <th>Razón Social</th>
+              <th>Dirección</th>
+              <th>Teléfono</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ferreterias.map((ferreteria) => (
+              <tr key={ferreteria.id_ferreteria}>
+                <td data-label="RUT">{ferreteria.rut}</td>
+                <td data-label="Razón Social">{ferreteria.razon_social}</td>
+                <td data-label="Dirección">{ferreteria.direccion}</td>
+                <td data-label="Teléfono">{ferreteria.telefono || 'N/A'}</td>
+                <td data-label="Acciones">
+                  <div className="action-buttons">
+                    <button
+                      onClick={() => onEdit(ferreteria)}
+                      className="action-button edit-button"
+                      title="Editar ferretería"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => onDelete(ferreteria)}
+                      className="action-button delete-button"
+                      title="Eliminar ferretería"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

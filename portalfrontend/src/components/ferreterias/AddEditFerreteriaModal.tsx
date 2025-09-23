@@ -122,16 +122,13 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{ferreteriaToEdit ? 'Editar Ferretería' : 'Añadir Nueva Ferretería'}</h2>
-          <button onClick={onClose} className="close-button">
-            ×
-          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="ferreteria-form">
+        <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="rut">RUT *</label>
@@ -230,11 +227,11 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
             {errors.api_key && <span className="error-message">{errors.api_key}</span>}
           </div>
 
-          <div className="modal-actions">
-            <button type="button" onClick={onClose} className="cancel-button">
+          <div className="modal-footer">
+            <button type="button" onClick={onClose} className="button-secondary">
               Cancelar
             </button>
-            <button type="submit" className="save-button">
+            <button type="submit" className="button-primary">
               {ferreteriaToEdit ? 'Actualizar' : 'Crear'} Ferretería
             </button>
           </div>

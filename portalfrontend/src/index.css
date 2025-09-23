@@ -1,13 +1,148 @@
+/* Variables CSS con la paleta de colores proporcionada */
+:root {
+  --color-primary-darkest: #0A0908; /* Negro muy oscuro */
+  --color-secondary-dark: #22333B; /* Azul/Gris oscuro */
+  --color-background-light: #EAE0D5; /* Beige claro (fondo principal) */
+  --color-accent-medium: #C6AC8F; /* Marrón/Arena medio (para acentos, bordes) */
+  --color-text-dark: #5E503F; /* Marrón oscuro (para texto principal) */
+  --color-white: #FFFFFF;
+
+  /* Colores funcionales (basados en la paleta pero adaptados para claridad) */
+  --color-success: #4CAF50; /* Un verde funcional */
+  --color-error: #F44336;   /* Un rojo funcional */
+  --color-info: #2196F3;    /* Un azul funcional */
+
+  /* Fuentes - limpias y legibles */
+  --font-primary: 'Roboto', sans-serif;
+  --font-secondary: 'Open Sans', sans-serif;
+
+  /* Espaciado */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Border Radius */
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+
+  /* Sombras muy sutiles, inspiradas en el diseño original */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+/* Estilos Base */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background-light);
+  color: var(--color-text-dark);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-secondary);
+  color: var(--color-primary-darkest);
+  font-weight: 600;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Estilos generales de botones */
+button {
+  cursor: pointer;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  letter-spacing: 0.2px;
+}
+
+.button-primary {
+  background-color: var(--color-secondary-dark);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.button-primary:hover {
+  background-color: var(--color-primary-darkest);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.button-secondary {
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+  border: 1px solid var(--color-accent-medium);
+  box-shadow: var(--shadow-sm);
+}
+
+.button-secondary:hover {
+  background-color: var(--color-accent-medium);
+  color: var(--color-white);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Estilos generales de formularios */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 600;
+  color: var(--color-text-dark);
+  font-size: 0.9rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-accent-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
+  color: var(--color-text-dark);
+  background-color: var(--color-white);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--color-secondary-dark);
+  box-shadow: 0 0 0 2px rgba(34, 51, 59, 0.2);
+  outline: none;
+}
+
+.form-group input::placeholder {
+  color: var(--color-accent-medium);
+}
+
+.form-row {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
 }

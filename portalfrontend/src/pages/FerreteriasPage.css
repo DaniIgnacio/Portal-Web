@@ -1,110 +1,64 @@
-/* src/pages/FerreteriasPage.css */
+/* src/pages/FerreteriasPage.css - Diseño Moderno y Minimalista */
 
 .ferreterias-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border-light);
 }
 
 .ferreterias-page-header h2 {
-  color: #495057;
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
+    font-family: var(--font-secondary);
+    font-size: 2rem;
+    color: var(--color-dark-text);
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 0.2px;
 }
 
 .add-ferreteria-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
+    background-color: var(--color-primary-blue);
+    color: var(--color-white);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    transition: all 0.2s ease-in-out;
+    box-shadow: var(--shadow-sm);
+    font-size: 0.95rem;
 }
 
 .add-ferreteria-button:hover {
-  background-color: #218838;
+    background-color: #316DD3;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
-.add-ferreteria-button:active {
-  background-color: #1e7e34;
+.add-ferreteria-button svg {
+    font-size: 1.1rem;
 }
 
-.error-message {
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
-  padding: 20px;
-  border-radius: 8px;
-  margin: 20px;
-  text-align: center;
-}
-
-.error-message p {
-  margin: 0 0 15px 0;
-  font-size: 1.1rem;
-}
-
-.retry-button {
-  padding: 10px 20px;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s ease;
-}
-
-.retry-button:hover {
-  background-color: #c82333;
-}
-
-.stock-alert {
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
-  color: #856404;
-  padding: 15px;
-  border-radius: 8px;
-  margin: 20px;
-}
-
-.stock-alert h3 {
-  margin: 0 0 10px 0;
-  font-size: 1.2rem;
-}
-
-.stock-alert ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.stock-alert li {
-  margin: 5px 0;
-}
-
-/* Responsive design */
+/* Media Queries para responsividad */
 @media (max-width: 768px) {
-  .ferreterias-page-header {
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-  }
+    .ferreterias-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+    }
 
-  .ferreterias-page-header h2 {
-    font-size: 1.5rem;
-  }
+    .ferreterias-page-header h2 {
+        font-size: 1.8rem;
+    }
 
-  .add-ferreteria-button {
-    width: 100%;
-    justify-content: center;
-  }
+    .add-ferreteria-button {
+        width: 100%;
+        justify-content: center;
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 0.9rem;
+    }
 }

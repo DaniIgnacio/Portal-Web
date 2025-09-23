@@ -4,12 +4,16 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import './DashboardLayout.css'; 
 
-const DashboardLayout = () => {
+interface DashboardLayoutProps {
+  onLogout: () => void;
+}
+
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
   return (
     <div className="dashboard-layout">
       <Sidebar />
       <div className="main-content">
-        <Header />
+        <Header onLogout={onLogout} />
         <main className="content-area">
           <Outlet /> {}
         </main>

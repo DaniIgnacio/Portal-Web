@@ -1,67 +1,94 @@
-/* src/components/Notification.css */
+/* src/components/common/Notification.css - Diseño Moderno y Minimalista */
 
 .notification-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 2000; /* Asegura que esté por encima de todo */
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
 .notification-item {
-  background-color: white;
-  color: black;
-  padding: 15px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 280px;
-  max-width: 350px;
-  animation: slideInRight 0.4s ease-out forwards, fadeOut 0.4s ease-in forwards 2.6s; /* Entra y sale */
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    color: var(--color-dark-text);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    min-width: 280px;
+    max-width: 350px;
+    box-shadow: var(--shadow-md);
+    animation: slideInRight 0.3s ease-out forwards;
+    background-color: var(--color-panel-bg);
+    border: 1px solid var(--color-border-light);
 }
 
-/* Colores según el tipo de notificación */
-.notification-item.success {
-  border-left: 5px solid #28a745; /* Verde para éxito */
-}
 .notification-item.error {
-  border-left: 5px solid #dc3545; /* Rojo para error */
-}
-.notification-item.info {
-  border-left: 5px solid #007bff; /* Azul para información */
+    background-color: #F8D7DA; /* Rojo muy suave */
+    color: #721C24; /* Texto rojo oscuro */
+    border-color: #F5C6CB; /* Borde rojo suave */
 }
 
-.notification-icon {
-  font-size: 20px;
+.notification-item.success {
+    background-color: #D4EDDA; /* Verde muy suave */
+    color: #155724; /* Texto verde oscuro */
+    border-color: #C3E6CB; /* Borde verde suave */
+}
+
+.notification-item.info {
+    background-color: #D1ECF1; /* Azul muy suave */
+    color: #0C5460; /* Texto azul oscuro */
+    border-color: #BEE5EB; /* Borde azul suave */
 }
 
 .notification-message {
-  flex-grow: 1;
-  font-size: 15px;
-  font-weight: 500;
+    flex-grow: 1;
+    font-size: 0.95rem;
 }
 
-/* Animaciones */
+.notification-dismiss {
+    background: none;
+    border: none;
+    color: var(--color-secondary-text);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.notification-dismiss:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
 @keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
+.notification-item.hide {
+    animation: fadeOutRight 0.3s ease-in forwards;
+}
+
+@keyframes fadeOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
 }

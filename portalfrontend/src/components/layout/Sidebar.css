@@ -1,42 +1,136 @@
+/* src/components/layout/Sidebar.css - Diseño Moderno y Minimalista */
 
 .sidebar {
-  width: 250px;
-  background-color: #1B4079; 
-  color: white;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  position: fixed;
+    width: 240px; /* Ancho más delgado */
+    background-color: var(--color-panel-bg); /* Fondo de panel claro */
+    color: var(--color-dark-text);
+    padding: var(--spacing-xl) var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-md);
+    transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+    z-index: 1000;
+    border-right: 1px solid var(--color-border-light); /* Borde sutil */
 }
 
 .sidebar-header {
-  padding: 20px;
-  text-align: center;
-  background-color: rgba(0, 0, 0, 0.2);
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
 }
 
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
+.sidebar-header h1 {
+    font-family: var(--font-secondary);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-primary-blue);
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav li {
+    margin-bottom: var(--spacing-sm);
 }
 
 .sidebar-nav a {
-  padding: 15px 20px;
-  color: #ecf0f1;
-  text-decoration: none;
-  transition: background-color 0.2s;
-  border-left: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    color: var(--color-secondary-text);
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    background-color: transparent;
 }
 
 .sidebar-nav a:hover {
-  background-color: #4D7C8A; 
+    background-color: var(--color-light-bg);
+    color: var(--color-dark-text);
+    transform: translateX(3px); /* Movimiento sutil */
 }
 
-
 .sidebar-nav a.active {
-  background-color: #4D7C8A; 
-  border-left: 4px solid #CBDF90; 
-  font-weight: bold;
-  color: #CBDF90; 
+    background-color: var(--color-primary-blue);
+    color: var(--color-white);
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    transform: translateX(3px);
+    border-left: 4px solid #1C5ECF; /* Azul más oscuro para el borde activo */
+}
+
+.sidebar-nav a svg {
+    margin-right: var(--spacing-md);
+    font-size: 1.2rem;
+    color: inherit;
+}
+
+/* Footer del Sidebar */
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--color-border-light);
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--color-secondary-text);
+}
+
+/* Media Queries para responsividad */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: var(--spacing-md) var(--spacing-sm);
+        box-shadow: var(--shadow-md);
+        border-right: none;
+        border-bottom: 1px solid var(--color-border-light);
+    }
+
+    .sidebar-header {
+        display: none;
+    }
+
+    .sidebar-nav ul {
+        display: flex;
+        width: 100%;
+        justify-content: space-around;
+    }
+
+    .sidebar-nav li {
+        margin-bottom: 0;
+    }
+
+    .sidebar-nav a {
+        flex-direction: column;
+        font-size: 0.75rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        text-align: center;
+        border-left: none;
+        transform: none;
+    }
+
+    .sidebar-nav a svg {
+        margin-right: 0;
+        margin-bottom: var(--spacing-xs);
+        font-size: 1rem;
+    }
+
+    .sidebar-nav a.active {
+        transform: none;
+        border-left: none;
+        border-bottom: 3px solid var(--color-primary-blue);
+        background-color: var(--color-light-bg);
+    }
+
+    .sidebar-footer {
+        display: none;
+    }
 }
