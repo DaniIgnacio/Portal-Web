@@ -22,6 +22,9 @@ const ProductosPage = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
+  // Hook para controlar la visibilidad de la alerta de stock
+  const [isAlertVisible, setIsAlertVisible] = useState(true);
+
   const { notifications, addNotification, dismissNotification } = useNotifications();
 
   const getAuthHeaders = (): HeadersInit => {
@@ -52,7 +55,7 @@ const ProductosPage = () => {
           setProducts([]);
         }
 
-        // Cargar categorías (las categorías son globales y no requieren id_ferreteria)
+        // Cargar categorías
         const categoriesResponse = await fetch(`${API_URL}/categorias`);
         if (categoriesResponse.ok) {
           const categoriesData = await categoriesResponse.json();
@@ -62,9 +65,6 @@ const ProductosPage = () => {
           addNotification(`Error al cargar categorías: ${categoriesResponse.statusText || categoriesResponse.status}`, 'error');
           setCategories([]);
         }
-
-        // La carga de ferreterías ya no es necesaria aquí
-
       } catch (error) {
         console.error('Error al cargar los datos:', error);
         setProducts([]);
@@ -77,6 +77,13 @@ const ProductosPage = () => {
     };
     fetchData();
   }, [addNotification]);
+  
+  // Vuelve a mostrar la alerta si la lista de productos cambia
+  useEffect(() => {
+    if (products.length > 0) {
+      setIsAlertVisible(true);
+    }
+  }, [products]);
 
   const handleSaveProduct = async (product: Product) => {
     const headers: HeadersInit = { 'Content-Type': 'application/json', ...getAuthHeaders() };
@@ -89,9 +96,7 @@ const ProductosPage = () => {
     }
 
     try {
-      // Crear una copia del producto para modificar el precio sin afectar el estado original
       const { id_producto, id_ferreteria, ferreteria, ...productDataToSend } = product;
-      // NO multiplicar por 100 aquí, el precio ya es el valor que el usuario ingresó
       
       const response = await fetch(url, {
         method,
@@ -103,20 +108,18 @@ const ProductosPage = () => {
         const savedProduct = await response.json();
         if (method === 'POST') {
           setProducts([...products, savedProduct]);
-          addNotification(`Producto \"${savedProduct.nombre}\" creado correctamente.`, 'success');
+          addNotification(`Producto "${savedProduct.nombre}" creado correctamente.`, 'success');
         } else {
           setProducts(products.map(p => (p.id_producto === savedProduct.id_producto ? savedProduct : p)));
-          addNotification(`Producto \"${savedProduct.nombre}\" actualizado correctamente.`, 'success');
+          addNotification(`Producto "${savedProduct.nombre}" actualizado correctamente.`, 'success');
         }
       } else if (response.status === 401 || response.status === 403) {
         addNotification('No autorizado para realizar esta acción. Por favor, inicia sesión de nuevo.', 'error');
       } else {
         const errorData = await response.json();
-        console.error(`Falló la ${method === 'POST' ? 'creación' : 'actualización'} del producto:`, errorData);
         addNotification(`Error al ${method === 'POST' ? 'crear' : 'actualizar'} el producto: ${errorData.error || response.statusText}`, 'error');
       }
     } catch (error) {
-      console.error('Error de red al guardar el producto:', error);
       addNotification('Error de red al guardar el producto.', 'error');
     }
     closeModal();
@@ -139,7 +142,7 @@ const ProductosPage = () => {
 
       if (response.ok) {
         setProducts(products.filter(p => p.id_producto !== productToDelete.id_producto));
-        addNotification(`Producto \"${productToDelete.nombre}\" eliminado correctamente.`, 'success');
+        addNotification(`Producto "${productToDelete.nombre}" eliminado correctamente.`, 'success');
       } else if (response.status === 401 || response.status === 403) {
         addNotification('No autorizado para eliminar este producto. Por favor, inicia sesión de nuevo.', 'error');
       } else {
@@ -147,7 +150,6 @@ const ProductosPage = () => {
         addNotification(`Error al eliminar el producto: ${errorData.error || response.statusText}`, 'error');
       }
     } catch (error) {
-      console.error('Error de red al eliminar:', error);
       addNotification('Error de red al eliminar el producto.', 'error');
     } finally {
       setIsConfirmModalOpen(false);
@@ -168,6 +170,10 @@ const ProductosPage = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setProductToEdit(null);
+  };
+
+  const handleDismissAlert = () => {
+    setIsAlertVisible(false);
   };
 
   if (isLoading) return <div>Cargando productos...</div>;
@@ -204,20 +210,27 @@ const ProductosPage = () => {
         </button>
       </div>
 
-      {lowStockProducts.length > 0 && (
+      {isAlertVisible && lowStockProducts.length > 0 && (
         <div className="stock-alert">
-          <div className="icon-wrapper">
-            {/* Puedes usar un SVG o un icono de librería aquí. Por ahora, un simple texto. */}
-            ⚠️
+          <div className="stock-alert-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
           </div>
-          <div className="content-wrapper">
-            <h3>Alerta de Stock Bajo</h3>
-            <ul>
-              {lowStockProducts.map(p => (
-                <li key={p.id_producto}>{p.nombre} - Stock: {p.stock}</li>
-              ))}
-            </ul>
+          
+          <div className="stock-alert-content">
+            <h4>Alerta: Productos con stock bajo</h4>
+            <p>
+              Los siguientes productos se están agotando: {' '}
+              {lowStockProducts.map(p => `${p.nombre} (Stock: ${p.stock})`).join(', ')}.
+            </p>
           </div>
+
+          <button onClick={handleDismissAlert} className="stock-alert-close">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
 
@@ -233,8 +246,6 @@ const ProductosPage = () => {
         onSave={handleSaveProduct}
         productToEdit={productToEdit}
         categories={categories}
-        // Ya no necesitamos pasar ferreterias al modal porque el backend maneja la asociación
-        // ferreterias={ferreterias}
       />
 
       <ConfirmationModal
@@ -242,7 +253,7 @@ const ProductosPage = () => {
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={handleConfirmDelete}
         title="Confirmar Eliminación"
-        message={`¿Estás seguro de que quieres eliminar el producto \"${productToDelete?.nombre}\"? Esta acción no se puede deshacer.`}
+        message={`¿Estás seguro de que quieres eliminar el producto "${productToDelete?.nombre}"? Esta acción no se puede deshacer.`}
       />
 
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />

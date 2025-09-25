@@ -44,13 +44,13 @@ cd portalWeb
 - `npm install --save-dev @types/bcryptjs`
 
 
-### 5. Configuración del Frontend
+### Configuración del Frontend
 
 - `npm install`
 - `npm install @supabase/supabase-js react-router-dom react-icons`
 
 
-### 6. Ejecutar la Aplicación
+### Ejecutar la Aplicación
 Iniciar el Backend Desde la carpeta portalbackend:
 
 - `npm run dev`
