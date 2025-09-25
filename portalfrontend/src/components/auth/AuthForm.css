@@ -5,87 +5,119 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f4f6f9; /* Un fondo gris muy claro */
+  background-color: var(--color-background-light); /* Fondo blanco muy claro */
+  padding: var(--spacing-xl); /* Aumentar padding para evitar que se vea 'al borde' */
 }
 
 .auth-card {
-  background-color: white;
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg); /* Sombra más pronunciada para el card */
+  padding: var(--spacing-xl) var(--spacing-xxl); /* Aumentar padding horizontal */
   width: 100%;
-  max-width: 450px;
+  max-width: 450px; /* Aumentar ligeramente el ancho máximo */
   text-align: center;
-  border-top: 5px solid #1B4079; /* Yale Blue */
+  border: 1px solid var(--color-accent-medium); /* Borde suave */
+}
+
+.auth-header {
+  margin-bottom: var(--spacing-lg);
 }
 
 .auth-header h2 {
-  color: #1B4079; /* Yale Blue */
-  margin: 0 0 10px 0;
-  font-size: 26px;
+  color: var(--color-primary-darkest);
+  font-size: 2.2rem; /* Ajustar tamaño de fuente */
+  margin-bottom: var(--spacing-xs);
 }
 
 .auth-header p {
-  color: #6c757d;
-  margin-bottom: 30px;
+  color: var(--color-text-dark);
+  font-size: 1.05rem;
 }
 
 .auth-form .form-group {
   text-align: left;
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-md);
 }
 
-.auth-form label {
-  display: block;
+.auth-form .form-group label {
   font-weight: 600;
-  margin-bottom: 8px;
-  color: #555;
+  color: var(--color-text-dark);
+  margin-bottom: var(--spacing-sm); /* Ajustar espacio */
+  display: block;
 }
 
-.auth-form input {
+.auth-form .form-group input {
   width: 100%;
-  padding: 12px 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  padding: var(--spacing-md) var(--spacing-lg); /* Aumentar padding */
+  border: 1px solid var(--color-accent-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
+  color: var(--color-text-dark);
+  background-color: var(--color-white);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box; /* Asegura que el padding y el border se incluyan en el ancho */
 }
 
-.auth-form input:focus {
+.auth-form .form-group input:focus {
+  border-color: var(--color-secondary-dark);
+  box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.2);
   outline: none;
-  border-color: #4D7C8A; /* Air Force Blue */
-  box-shadow: 0 0 0 3px rgba(77, 124, 138, 0.2);
 }
 
 .auth-button {
   width: 100%;
-  padding: 15px;
-  background-color: #1B4079; /* Yale Blue */
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
+  padding: var(--spacing-md) var(--spacing-lg); /* Aumentar padding */
+  background-color: var(--color-secondary-dark); /* Botón oscuro */
+  color: var(--color-white);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--border-radius-md);
+  font-size: 1.05rem; /* Ajustar tamaño de fuente */
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  margin-top: var(--spacing-lg); /* Ajustar margen superior */
+  box-shadow: var(--shadow-sm);
 }
 
 .auth-button:hover {
-  background-color: #4D7C8A; /* Air Force Blue */
+  background-color: var(--color-primary-darkest); /* Más oscuro al pasar el ratón */
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.auth-button:disabled {
+  background-color: var(--color-accent-medium);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .auth-footer {
-  margin-top: 25px;
-  color: #6c757d;
+  margin-top: var(--spacing-xl); /* Ajustar margen superior */
+  font-size: 0.95rem;
+  color: var(--color-text-dark);
 }
 
 .auth-footer a {
-  color: #1B4079; /* Yale Blue */
-  font-weight: bold;
+  color: var(--color-secondary-dark);
   text-decoration: none;
+  font-weight: 600;
 }
 
 .auth-footer a:hover {
   text-decoration: underline;
+  color: var(--color-primary-darkest);
+}
+
+.auth-form .form-separator {
+  border-top: 1px solid var(--color-accent-medium);
+  margin: var(--spacing-xl) 0;
+}
+
+.auth-form h3 {
+  color: var(--color-primary-darkest);
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
 }

@@ -1,0 +1,137 @@
+.perfil-page {
+  padding: var(--spacing-lg);
+  background-color: var(--color-background-light);
+}
+
+.perfil-header {
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--color-white);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-accent-medium);
+}
+
+.perfil-header h2 {
+  margin: 0;
+  color: var(--color-primary-darkest);
+  font-size: 1.8rem;
+}
+
+.perfil-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.perfil-card {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-accent-medium);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--color-background-light);
+  border-bottom: 1px solid var(--color-accent-medium);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  margin: 0;
+  color: var(--color-primary-darkest);
+  font-size: 1.2rem;
+}
+
+.card-body {
+  padding: var(--spacing-lg);
+  flex-grow: 1;
+}
+
+.personal-info .form-group,
+.ferreteria-info .form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.personal-info label,
+.ferreteria-info label {
+  font-weight: 600;
+  color: var(--color-text-dark);
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+.personal-info span,
+.ferreteria-info span {
+  color: var(--color-secondary-dark);
+  display: block;
+  padding: var(--spacing-xs) 0;
+}
+
+.edit-button {
+  background-color: var(--color-secondary-dark);
+  color: var(--color-white);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+}
+
+.edit-button:hover {
+  background-color: var(--color-primary-darkest);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.personal-info input,
+.ferreteria-info input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-accent-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
+  color: var(--color-text-dark);
+  background-color: var(--color-white);
+  box-sizing: border-box;
+}
+
+.edit-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  justify-content: flex-end;
+}
+
+.stats-summary .stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px dashed var(--color-accent-medium);
+  color: var(--color-text-dark);
+}
+
+.stats-summary .stat-item:last-child {
+  border-bottom: none;
+}
+
+.stats-summary .stat-item strong {
+  color: var(--color-secondary-dark);
+}
+
+.stats-summary .stat-item .text-error {
+  color: var(--color-error);
+}
+
+/* Media Queries para responsividad */
+@media (max-width: 768px) {
+  .perfil-content {
+    grid-template-columns: 1fr;
+  }
+}

@@ -89,7 +89,9 @@ const ProductosPage = () => {
     }
 
     try {
+      // Crear una copia del producto para modificar el precio sin afectar el estado original
       const { id_producto, id_ferreteria, ferreteria, ...productDataToSend } = product;
+      // NO multiplicar por 100 aquí, el precio ya es el valor que el usuario ingresó
       
       const response = await fetch(url, {
         method,
@@ -204,12 +206,18 @@ const ProductosPage = () => {
 
       {lowStockProducts.length > 0 && (
         <div className="stock-alert">
-          <h3>⚠️ Alerta de Stock Bajo</h3>
-          <ul>
-            {lowStockProducts.map(p => (
-              <li key={p.id_producto}>{p.nombre} - Stock: {p.stock}</li>
-            ))}
-          </ul>
+          <div className="icon-wrapper">
+            {/* Puedes usar un SVG o un icono de librería aquí. Por ahora, un simple texto. */}
+            ⚠️
+          </div>
+          <div className="content-wrapper">
+            <h3>Alerta de Stock Bajo</h3>
+            <ul>
+              {lowStockProducts.map(p => (
+                <li key={p.id_producto}>{p.nombre} - Stock: {p.stock}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 

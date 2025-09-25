@@ -42,7 +42,6 @@ const ProductList: React.FC<ProductListProps> = ({ products, onEdit, onDelete })
           <th>Precio</th>
           <th>Stock</th>
           <th>Categoría</th>
-          <th>Ferretería</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -54,7 +53,6 @@ const ProductList: React.FC<ProductListProps> = ({ products, onEdit, onDelete })
             <td data-label="Precio">${(product.precio / 100).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td data-label="Stock">{product.stock}</td>
             <td data-label="Categoría">{product.categoria?.nombre || 'Sin categoría'}</td>
-            <td data-label="Ferretería">{product.ferreteria?.razon_social || 'Sin ferretería'}</td>
             <td data-label="Acciones">
               <button onClick={() => onEdit(product)} className="action-button edit-button">Editar</button>
               <button onClick={() => onDelete(product)} className="action-button delete-button">Eliminar</button>

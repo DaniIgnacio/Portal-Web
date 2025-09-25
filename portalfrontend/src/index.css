@@ -1,16 +1,16 @@
-/* Variables CSS con la paleta de colores proporcionada */
+/* Variables CSS con la paleta de colores blanco y negro, bordes y sombras */
 :root {
-  --color-primary-darkest: #0A0908; /* Negro muy oscuro */
-  --color-secondary-dark: #22333B; /* Azul/Gris oscuro */
-  --color-background-light: #EAE0D5; /* Beige claro (fondo principal) */
-  --color-accent-medium: #C6AC8F; /* Marrón/Arena medio (para acentos, bordes) */
-  --color-text-dark: #5E503F; /* Marrón oscuro (para texto principal) */
-  --color-white: #FFFFFF;
+  --color-primary-darkest: #1A1A1A; /* Negro muy oscuro para elementos principales */
+  --color-secondary-dark: #333333; /* Gris oscuro para texto y fondos secundarios */
+  --color-background-light: #F5F5F5; /* Blanco muy claro para fondos */
+  --color-accent-medium: #CCCCCC; /* Gris claro para bordes y separadores */
+  --color-text-dark: #444444; /* Gris oscuro para texto principal */
+  --color-white: #FFFFFF; /* Blanco puro */
 
-  /* Colores funcionales (basados en la paleta pero adaptados para claridad) */
-  --color-success: #4CAF50; /* Un verde funcional */
-  --color-error: #F44336;   /* Un rojo funcional */
-  --color-info: #2196F3;    /* Un azul funcional */
+  /* Colores funcionales (grises para coherencia con el tema) */
+  --color-success: #4CAF50; /* Verde funcional, mantengo este para mensajes de éxito */
+  --color-error: #F44336;   /* Rojo funcional, mantengo este para mensajes de error */
+  --color-info: #2196F3;    /* Azul funcional, mantengo este para mensajes de información */
 
   /* Fuentes - limpias y legibles */
   --font-primary: 'Roboto', sans-serif;
@@ -22,15 +22,22 @@
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+  --spacing-xxl: 48px; /* Nuevo espaciado para padding de card */
 
   /* Border Radius */
   --border-radius-sm: 4px;
   --border-radius-md: 6px;
   --border-radius-lg: 8px;
 
-  /* Sombras muy sutiles, inspiradas en el diseño original */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 2px 5px rgba(0, 0, 0, 0.08);
+  /* Sombras sutiles y elegantes para un aspecto "lindo" */
+  --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Reseteo de box-sizing para todos los elementos */
+* {
+  box-sizing: border-box;
 }
 
 /* Estilos Base */
@@ -128,7 +135,7 @@ button {
 .form-group select:focus,
 .form-group textarea:focus {
   border-color: var(--color-secondary-dark);
-  box-shadow: 0 0 0 2px rgba(34, 51, 59, 0.2);
+  box-shadow: 0 0 0 2px rgba(51, 51, 51, 0.2);
   outline: none;
 }
 

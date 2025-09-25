@@ -47,16 +47,15 @@ const AddEditProductModal: React.FC<ModalProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    if (name === 'precio') {
-      const numericValue = parseFloat(value) || 0;
+    if (name === 'precio' || name === 'stock') {
       setProduct(prev => ({
         ...prev,
-        [name]: Math.round(numericValue * 100),
+        [name]: parseFloat(value) || 0,
       }));
     } else {
       setProduct(prev => ({
         ...prev,
-        [name]: type === 'number' ? parseFloat(value) || 0 : value,
+        [name]: value,
       }));
     }
   };
@@ -79,12 +78,12 @@ const AddEditProductModal: React.FC<ModalProps> = ({
           <div className="modal-body">
             <div className="form-group">
               <label htmlFor="nombre">Nombre del producto</label>
-              <input id="nombre" name="nombre" value={product.nombre} onChange={handleChange} required />
+              <input id="nombre" name="nombre" value={product.nombre} onChange={handleChange} required type="text" />
             </div>
 
             <div className="form-group">
               <label htmlFor="sku">SKU</label>
-              <input id="sku" name="sku" value={product.sku} onChange={handleChange} required />
+              <input id="sku" name="sku" value={product.sku} onChange={handleChange} required type="text" />
             </div>
 
             <div className="form-row">
@@ -93,10 +92,10 @@ const AddEditProductModal: React.FC<ModalProps> = ({
                 <input
                   id="precio"
                   name="precio"
-                  value={product.precio / 100}
+                  value={product.precio}
                   onChange={handleChange}
                   type="number"
-                  step="0.01"
+                  step="1"
                   required
                 />
               </div>

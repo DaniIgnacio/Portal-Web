@@ -6,14 +6,15 @@ import './DashboardLayout.css';
 
 interface DashboardLayoutProps {
   onLogout: () => void;
+  userName: string | null; // Nuevo prop para el nombre de usuario
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ onLogout, userName }) => {
   return (
     <div className="dashboard-layout">
       <Sidebar />
       <div className="main-content">
-        <Header onLogout={onLogout} />
+        <Header onLogout={onLogout} userName={userName} /> {/* Pasar userName al Header */}
         <main className="content-area">
           <Outlet /> {}
         </main>

@@ -1,94 +1,88 @@
 /* src/components/common/Notification.css - Diseño Moderno y Minimalista */
 
 .notification-container {
-    position: fixed;
-    bottom: var(--spacing-lg);
-    right: var(--spacing-lg);
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-sm);
+  position: fixed;
+  top: calc(var(--spacing-xxl) + var(--spacing-lg)); /* Aumentar distancia desde la parte superior */
+  right: var(--spacing-xxl); /* Mantener distancia desde la derecha */
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  max-width: 380px;
 }
 
 .notification-item {
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: var(--border-radius-md);
-    color: var(--color-dark-text);
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--spacing-md);
-    min-width: 280px;
-    max-width: 350px;
-    box-shadow: var(--shadow-md);
-    animation: slideInRight 0.3s ease-out forwards;
-    background-color: var(--color-panel-bg);
-    border: 1px solid var(--color-border-light);
-}
-
-.notification-item.error {
-    background-color: #F8D7DA; /* Rojo muy suave */
-    color: #721C24; /* Texto rojo oscuro */
-    border-color: #F5C6CB; /* Borde rojo suave */
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+  padding: var(--spacing-md) var(--spacing-lg); /* Ajuste de padding */
+  border-radius: var(--border-radius-lg); /* Más redondeado para parecer una tarjeta */
+  box-shadow: var(--shadow-md); /* Sombra para efecto flotante */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Alinear elementos al inicio */
+  gap: var(--spacing-md); /* Espacio entre icono y mensaje */
+  border: 1px solid var(--color-accent-medium);
+  animation: slideIn 0.3s forwards;
 }
 
 .notification-item.success {
-    background-color: #D4EDDA; /* Verde muy suave */
-    color: #155724; /* Texto verde oscuro */
-    border-color: #C3E6CB; /* Borde verde suave */
+  border-left: 2px solid var(--color-success); /* Borde sutil */
+}
+
+.notification-item.error {
+  border-left: 2px solid var(--color-error); /* Borde sutil */
 }
 
 .notification-item.info {
-    background-color: #D1ECF1; /* Azul muy suave */
-    color: #0C5460; /* Texto azul oscuro */
-    border-color: #BEE5EB; /* Borde azul suave */
+  border-left: 2px solid var(--color-info); /* Borde sutil */
+}
+
+.notification-icon {
+  font-size: 1.4rem; /* Tamaño más grande para el icono */
+  line-height: 1; /* Asegurar alineación vertical */
+  flex-shrink: 0; /* Evitar que el icono se encoja */
+}
+
+.notification-item.success .notification-icon {
+  color: var(--color-success);
+}
+
+.notification-item.error .notification-icon {
+  color: var(--color-error);
+}
+
+.notification-item.info .notification-icon {
+  color: var(--color-info);
 }
 
 .notification-message {
-    flex-grow: 1;
-    font-size: 0.95rem;
+  flex-grow: 1;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
+/* Opcional: estilo para el botón de cerrar si lo reintroduces */
 .notification-dismiss {
-    background: none;
-    border: none;
-    color: var(--color-secondary-text);
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0 5px;
-    line-height: 1;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
+  background: none;
+  border: none;
+  color: var(--color-accent-medium);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
 }
 
 .notification-dismiss:hover {
+  color: var(--color-primary-darkest);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
     opacity: 1;
-    transform: rotate(90deg);
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.notification-item.hide {
-    animation: fadeOutRight 0.3s ease-in forwards;
-}
-
-@keyframes fadeOutRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
+  }
 }

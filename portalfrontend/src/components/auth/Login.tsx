@@ -8,10 +8,10 @@ import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
 
 interface LoginProps {
-  setIsAuthenticated: (isAuthenticated: boolean) => void;
+  onLoginSuccess: (user: any, token: string) => void; // Cambiado de setIsAuthenticated
 }
 
-const Login: React.FC<LoginProps> = ({ setIsAuthenticated }) => {
+const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -37,12 +37,12 @@ const Login: React.FC<LoginProps> = ({ setIsAuthenticated }) => {
         throw new Error(data.error || 'Error al iniciar sesión');
       }
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Llama a la nueva función onLoginSuccess para actualizar el estado en App.tsx
+      onLoginSuccess(data.user, data.token);
       
-      setIsAuthenticated(true);
-      addNotification('¡Inicio de sesión exitoso!', 'success');
-      navigate('/dashboard');
+      // Ya no navegamos aquí, lo hace App.tsx
+      // addNotification('¡Inicio de sesión exitoso!', 'success');
+      // navigate('/dashboard');
     } catch (error: any) {
       console.error('Error en el inicio de sesión:', error);
       addNotification(`Error de inicio de sesión: ${error.message}`, 'error');

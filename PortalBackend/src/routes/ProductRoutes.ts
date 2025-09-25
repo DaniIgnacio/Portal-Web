@@ -60,14 +60,14 @@ router.post('/productos', verifyToken, async (req: any, res) => {
         return res.status(400).json({ error: 'La categoría es requerida.' });
     }
 
-    const precioEnCentavos = Math.round(numericPrecio * 100);
+    // const precioEnCentavos = Math.round(numericPrecio * 100); // Eliminado para manejar precios como enteros CLP
 
     const { data, error } = await supabase
         .from('producto')
         .insert([{
             nombre,
             sku,
-            precio: precioEnCentavos,
+            precio: numericPrecio, // Almacenar directamente como número
             stock: integerStock,
             id_categoria,
             id_ferreteria
@@ -102,12 +102,12 @@ router.put('/productos/:id', verifyToken, async (req: any, res) => {
         return res.status(400).json({ error: 'Precio y stock deben ser números válidos.' });
     }
 
-    const precioEnCentavos = Math.round(numericPrecio * 100);
+    // const precioEnCentavos = Math.round(numericPrecio * 100); // Eliminado para manejar precios como enteros CLP
 
     const updateData: any = {
         nombre,
         sku,
-        precio: precioEnCentavos,
+        precio: numericPrecio, // Almacenar directamente como número
         stock: integerStock
     };
 

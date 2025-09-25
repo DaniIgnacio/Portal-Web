@@ -1,45 +1,74 @@
 /* src/pages/FerreteriasPage.css - Diseño Moderno y Minimalista */
 
 .ferreterias-page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-xl);
-    padding-bottom: var(--spacing-lg);
-    border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--color-white);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-accent-medium);
 }
 
 .ferreterias-page-header h2 {
-    font-family: var(--font-secondary);
-    font-size: 2rem;
-    color: var(--color-dark-text);
-    margin: 0;
-    font-weight: 700;
-    letter-spacing: 0.2px;
+  margin: 0;
+  color: var(--color-primary-darkest);
+  font-size: 1.8rem;
 }
 
 .add-ferreteria-button {
-    background-color: var(--color-primary-blue);
-    color: var(--color-white);
-    padding: var(--spacing-sm) var(--spacing-lg);
-    border-radius: var(--border-radius-md);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    transition: all 0.2s ease-in-out;
-    box-shadow: var(--shadow-sm);
-    font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background-color: var(--color-secondary-dark);
+  color: var(--color-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--shadow-sm);
 }
 
 .add-ferreteria-button:hover {
-    background-color: #316DD3;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+  background-color: var(--color-primary-darkest);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
-.add-ferreteria-button svg {
-    font-size: 1.1rem;
+/* Estilos para el mensaje de error */
+.error-message {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-accent-medium);
+  border-left: 5px solid var(--color-error);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-error);
+  text-align: center;
+}
+
+.error-message p {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 1.1rem;
+}
+
+.retry-button {
+  background-color: var(--color-secondary-dark);
+  color: var(--color-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--shadow-sm);
+}
+
+.retry-button:hover {
+  background-color: var(--color-primary-darkest);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 /* Media Queries para responsividad */

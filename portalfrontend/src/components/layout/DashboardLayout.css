@@ -1,16 +1,22 @@
 .dashboard-layout {
   display: flex;
+  min-height: 100vh;
+  background-color: var(--color-background-light); /* Fondo blanco muy claro para el layout */
 }
 
 .main-content {
   flex-grow: 1;
-  margin-left: 250px;
   display: flex;
   flex-direction: column;
+  background-color: var(--color-background-light); /* Asegura que el contenido principal también use el color de fondo */
+  margin-left: 250px; /* Desplaza el contenido principal a la derecha del sidebar */
 }
 
 .content-area {
-  padding: 20px;
-  background-color: #f4f6f9;
   flex-grow: 1;
+  padding: var(--spacing-lg);
+  background-color: var(--color-background-light); /* Fondo para el área de contenido */
+  border-radius: var(--border-radius-lg);
+  padding-top: var(--spacing-xl); /* Espacio superior para el contenido */
+  padding-bottom: var(--spacing-xl); /* Espacio inferior para el contenido */
 }

@@ -46,8 +46,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onDis
     <div className={`notification-item ${notification.type}`}>
       <span className="notification-icon">{getIcon(notification.type)}</span>
       <span className="notification-message">{notification.message}</span>
-      {/* Opcional: un botón para cerrar manualmente la notificación */}
-      {/* <button onClick={() => onDismiss(notification.id)} className="notification-close">x</button> */}
+      <button onClick={() => onDismiss(notification.id)} className="notification-dismiss">✖</button>
     </div>
   );
 };

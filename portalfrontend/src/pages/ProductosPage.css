@@ -1,41 +1,40 @@
 /* src/pages/ProductosPage.css - Diseño Moderno y Minimalista */
 
 .productos-page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-xl);
-    padding-bottom: var(--spacing-lg);
-    border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  background-color: var(--color-white);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-accent-medium);
 }
 
 .productos-page-header h2 {
-    font-family: var(--font-secondary);
-    font-size: 2rem;
-    color: var(--color-dark-text);
-    margin: 0;
-    font-weight: 700;
-    letter-spacing: 0.2px;
+  margin: 0;
+  color: var(--color-primary-darkest);
+  font-size: 1.8rem;
 }
 
 .add-product-button {
-    background-color: var(--color-primary-blue);
-    color: var(--color-white);
-    padding: var(--spacing-sm) var(--spacing-lg);
-    border-radius: var(--border-radius-md);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    transition: all 0.2s ease-in-out;
-    box-shadow: var(--shadow-sm);
-    font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background-color: var(--color-secondary-dark);
+  color: var(--color-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--shadow-sm);
 }
 
 .add-product-button:hover {
-    background-color: #316DD3;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+  background-color: var(--color-primary-darkest);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .add-product-button svg {
@@ -43,71 +42,81 @@
 }
 
 .stock-alert {
-    background-color: #FFFBEA; /* Amarillo muy suave */
-    border: 1px solid #FFECB3; /* Borde amarillo suave */
-    color: #856404; /* Texto amarillo oscuro */
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius-md);
-    margin-bottom: var(--spacing-xl);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    align-items: flex-start;
-    gap: var(--spacing-md);
+  background-color: var(--color-white); /* Fondo blanco */
+  border: 1px solid var(--color-accent-medium);
+  border-left: 5px solid var(--color-error); /* Borde de color para alerta */
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md); /* Sombra sutil para resaltar */
+  color: var(--color-text-dark);
+  display: flex; /* Para alinear icono y contenido */
+  align-items: flex-start; /* Alinear arriba */
+  gap: var(--spacing-md); /* Espacio entre el borde y el contenido/icono */
+}
+
+.stock-alert .icon-wrapper {
+  flex-shrink: 0;
+  padding-top: 2px; /* Ajuste para alinear icono con el texto */
+}
+
+.stock-alert .icon-wrapper svg {
+  font-size: 1.5rem;
+  color: var(--color-error); /* Icono de advertencia en rojo */
+}
+
+.stock-alert .content-wrapper {
+  flex-grow: 1;
 }
 
 .stock-alert h3 {
-    font-family: var(--font-secondary);
-    font-size: 1.2rem;
-    margin-top: 0;
-    margin-bottom: var(--spacing-xs);
-    color: #856404;
+  color: var(--color-primary-darkest); /* Color más oscuro para el título */
+  margin: 0 0 var(--spacing-xs) 0; /* Ajustar margen */
+  font-size: 1.2rem;
 }
 
 .stock-alert ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  margin: 0; /* Eliminar margen por defecto */
+  padding-left: var(--spacing-lg); /* Sangría para las viñetas */
+  list-style-type: disc; /* Asegurar viñetas */
 }
 
 .stock-alert li {
-    margin-bottom: var(--spacing-xs);
-    font-size: 0.9rem;
-    color: var(--color-dark-text);
-}
-
-.stock-alert svg {
-    font-size: 1.5rem;
-    color: var(--color-warning);
-    flex-shrink: 0;
+  margin-bottom: var(--spacing-xs);
+  font-size: 0.95rem; /* Ajustar tamaño de fuente */
 }
 
 .error-message {
-    background-color: #F8D7DA; /* Rojo muy suave */
-    border: 1px solid #F5C6CB; /* Borde rojo suave */
-    color: #721C24; /* Texto rojo oscuro */
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius-md);
-    margin-top: var(--spacing-xl);
-    text-align: center;
-    box-shadow: var(--shadow-sm);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-accent-medium);
+  border-left: 5px solid var(--color-error);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-error);
+  text-align: center;
 }
 
 .error-message p {
-    font-size: 1rem;
-    color: var(--color-dark-text);
-    margin-bottom: var(--spacing-md);
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 1.1rem;
 }
 
 .retry-button {
-    background-color: var(--color-primary-blue);
-    color: var(--color-white);
-    box-shadow: var(--shadow-sm);
+  background-color: var(--color-secondary-dark);
+  color: var(--color-white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--shadow-sm);
 }
 
 .retry-button:hover {
-    background-color: #316DD3;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+  background-color: var(--color-primary-darkest);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 /* Media Queries para responsividad */

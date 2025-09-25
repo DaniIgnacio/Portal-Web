@@ -7,9 +7,10 @@ import './Header.css';
 
 interface HeaderProps {
   onLogout: () => void;
+  userName: string | null; // Nuevo prop para el nombre de usuario
 }
 
-const Header: React.FC<HeaderProps> = ({ onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ onLogout, userName }) => {
   // La línea de useNavigate ya no es necesaria
   // const navigate = useNavigate();
 
@@ -29,6 +30,7 @@ const Header: React.FC<HeaderProps> = ({ onLogout }) => {
         <h2>Gestión de Inventario</h2>
       </div>
       <div className="header-user-menu">
+        {userName && <span className="user-name">Hola, {userName}</span>} {/* Mostrar el nombre del usuario */}
         <button onClick={onLogout} className="logout-button">
           <LogoutIcon /> {}
           <span>Cerrar Sesión</span>

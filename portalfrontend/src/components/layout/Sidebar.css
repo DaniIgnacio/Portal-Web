@@ -1,68 +1,64 @@
 /* src/components/layout/Sidebar.css - Diseño Moderno y Minimalista */
 
 .sidebar {
-    width: 240px; /* Ancho más delgado */
-    background-color: var(--color-panel-bg); /* Fondo de panel claro */
-    color: var(--color-dark-text);
-    padding: var(--spacing-xl) var(--spacing-md);
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow-md);
-    transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
-    z-index: 1000;
-    border-right: 1px solid var(--color-border-light); /* Borde sutil */
+  width: 250px;
+  background-color: var(--color-white); /* Sidebar blanco */
+  color: var(--color-text-dark);
+  padding: var(--spacing-lg) var(--spacing-md);
+  box-shadow: var(--shadow-md); /* Sombra sutil a la derecha */
+  border-right: 1px solid var(--color-accent-medium); /* Borde separador */
+  display: flex;
+  flex-direction: column;
+  position: fixed; /* Fijo para que se mantenga visible */
+  height: 100vh;
+  top: 0;
+  left: 0;
+  z-index: 1000;
 }
 
 .sidebar-header {
-    text-align: center;
-    margin-bottom: var(--spacing-xl);
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-accent-medium);
 }
 
 .sidebar-header h1 {
-    font-family: var(--font-secondary);
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--color-primary-blue);
-    margin: 0;
-    letter-spacing: 0.5px;
+  color: var(--color-primary-darkest);
+  font-size: 1.8rem;
+  margin: 0;
 }
 
 .sidebar-nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .sidebar-nav li {
-    margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
 }
 
 .sidebar-nav a {
-    display: flex;
-    align-items: center;
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: var(--border-radius-md);
-    color: var(--color-secondary-text);
-    text-decoration: none;
-    font-size: 1rem;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
-    background-color: transparent;
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-text-dark);
+  text-decoration: none;
+  border-radius: var(--border-radius-md);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-weight: 500;
 }
 
 .sidebar-nav a:hover {
-    background-color: var(--color-light-bg);
-    color: var(--color-dark-text);
-    transform: translateX(3px); /* Movimiento sutil */
+  background-color: var(--color-accent-medium); /* Fondo gris claro al pasar el ratón */
+  color: var(--color-primary-darkest);
 }
 
 .sidebar-nav a.active {
-    background-color: var(--color-primary-blue);
-    color: var(--color-white);
-    font-weight: 600;
-    box-shadow: var(--shadow-sm);
-    transform: translateX(3px);
-    border-left: 4px solid #1C5ECF; /* Azul más oscuro para el borde activo */
+  background-color: var(--color-secondary-dark); /* Fondo oscuro para el elemento activo */
+  color: var(--color-white);
+  font-weight: 700;
 }
 
 .sidebar-nav a svg {
@@ -73,12 +69,12 @@
 
 /* Footer del Sidebar */
 .sidebar-footer {
-    margin-top: auto;
-    padding-top: var(--spacing-lg);
-    border-top: 1px solid var(--color-border-light);
-    text-align: center;
-    font-size: 0.8rem;
-    color: var(--color-secondary-text);
+  margin-top: auto;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-accent-medium);
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-dark);
 }
 
 /* Media Queries para responsividad */

@@ -61,6 +61,7 @@ const AddEditCategoryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSave, c
                 value={category.nombre}
                 onChange={handleChange}
                 required
+                type="text" // Asegurar que es un input de texto
               />
             </div>
 

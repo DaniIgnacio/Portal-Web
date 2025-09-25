@@ -1,162 +1,130 @@
 /* src/components/ferreterias/FerreteriaList.css - Diseño Corporativo Elegante */
 
 .ferreteria-list {
-    margin-top: var(--spacing-lg);
-    /* Asegura que el contenedor tenga un fondo si la tabla no lo cubre */
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-accent-medium);
+  margin-top: var(--spacing-lg);
 }
 
 .no-ferreterias {
-    text-align: center;
-    color: var(--color-grey-medium);
-    font-style: italic;
-    padding: var(--spacing-xl);
-    background-color: var(--color-white);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--color-shadow-light);
-    margin: var(--spacing-lg) 0;
+  text-align: center;
+  color: var(--color-text-dark);
+  font-size: 1.1rem;
+  padding: var(--spacing-xl);
 }
 
 .ferreteria-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.95rem;
-    box-shadow: var(--color-shadow-medium);
-    border-radius: var(--border-radius-lg);
-    overflow: hidden;
-    background-color: var(--color-white);
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--spacing-md);
 }
 
-.ferreteria-table thead {
-    background-color: var(--color-grey-light);
-    color: var(--color-grey-darker);
-    border-bottom: 1px solid var(--color-border-subtle);
+.ferreteria-table th,
+.ferreteria-table td {
+  text-align: left;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--color-accent-medium);
+  color: var(--color-text-dark);
 }
 
 .ferreteria-table th {
-    padding: var(--spacing-md) var(--spacing-lg);
-    text-align: left;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 1;
+  background-color: var(--color-background-light);
+  font-weight: 700;
+  color: var(--color-primary-darkest);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.ferreteria-table th:first-child {
-    border-top-left-radius: var(--border-radius-lg);
-}
-
-.ferreteria-table th:last-child {
-    border-top-right-radius: var(--border-radius-lg);
-}
-
-.ferreteria-table tbody tr {
-    background-color: var(--color-white);
-    border-bottom: 1px solid var(--color-border-subtle);
-    transition: background-color 0.2s ease;
-}
-
-.ferreteria-table tbody tr:last-child {
-    border-bottom: none;
+.ferreteria-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .ferreteria-table tbody tr:hover {
-    background-color: #F8F9FA;
+  background-color: var(--color-background-light);
 }
 
-.ferreteria-table td {
-    padding: var(--spacing-md) var(--spacing-lg);
-    vertical-align: middle;
-    color: var(--color-grey-darker);
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
 }
 
-.ferreteria-list .action-buttons {
-    display: flex;
-    gap: var(--spacing-xs);
-    justify-content: center;
-    align-items: center;
+.action-button {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
 }
 
-.ferreteria-list .action-button {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--border-radius-sm);
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
+.edit-button {
+  background-color: var(--color-secondary-dark);
+  color: var(--color-white);
 }
 
-.ferreteria-list .edit-button {
-    background-color: var(--color-secondary-blue);
-    color: var(--color-white);
+.edit-button:hover {
+  background-color: var(--color-primary-darkest);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
-.ferreteria-list .edit-button:hover {
-    background-color: #31537A;
-    transform: translateY(-1px);
-    box-shadow: var(--color-shadow-medium);
+.delete-button {
+  background-color: var(--color-error);
+  color: var(--color-white);
 }
 
-.ferreteria-list .delete-button {
-    background-color: var(--color-accent-red);
-    color: var(--color-white);
+.delete-button:hover {
+  background-color: #C0222F;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
-.ferreteria-list .delete-button:hover {
-    background-color: #C0222F;
-    transform: translateY(-1px);
-    box-shadow: var(--color-shadow-medium);
-}
-
-/* Media Queries para responsividad */
+/* Responsividad de la tabla */
 @media (max-width: 768px) {
-    .ferreteria-table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-        border-radius: var(--border-radius-md);
-    }
+  .ferreteria-table thead {
+    display: none;
+  }
 
-    .ferreteria-table thead {
-        display: none;
-    }
+  .ferreteria-table,
+  .ferreteria-table tbody,
+  .ferreteria-table tr,
+  .ferreteria-table td {
+    display: block;
+    width: 100%;
+  }
 
-    .ferreteria-table tbody,
-    .ferreteria-table tr {
-        display: block;
-    }
+  .ferreteria-table tr {
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--color-accent-medium);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-sm);
+    background-color: var(--color-white);
+  }
 
-    .ferreteria-table td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--spacing-sm) var(--spacing-md);
-        border-bottom: 1px solid var(--color-border-subtle);
-        position: relative;
-        text-align: right;
-    }
+  .ferreteria-table td {
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+    border: none;
+  }
 
-    .ferreteria-table td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        text-transform: uppercase;
-        color: var(--color-grey-medium);
-        flex-basis: 50%;
-        text-align: left;
-        font-size: 0.8rem;
-    }
+  .ferreteria-table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: var(--spacing-md);
+    width: calc(50% - var(--spacing-md));
+    padding-right: var(--spacing-xs);
+    white-space: nowrap;
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-primary-darkest);
+  }
 
-    .ferreteria-table td:last-child {
-        border-bottom: none;
-        text-align: center;
-    }
-
-    .ferreteria-list .action-button {
-        margin-right: 0;
-        width: 100%;
-        margin-bottom: var(--spacing-xs);
-    }
-
-    .ferreteria-list .action-button:last-child {
-        margin-bottom: 0;
-    }
+  .ferreteria-table td:last-child {
+    border-bottom: none;
+  }
 }

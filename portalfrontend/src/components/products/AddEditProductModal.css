@@ -1,52 +1,48 @@
 /* src/components/products/AddEditProductModal.css - Diseño Moderno y Minimalista */
 
 .modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.4); /* Fondo oscuro semitransparente */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(3px); /* Blur sutil */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente oscuro */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
 }
 
 .modal-content {
-    background-color: var(--color-panel-bg); /* Blanco puro */
-    padding: 40px; /* Más espacio interno */
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-md); /* Sombra sutil */
-    width: 100%;
-    max-width: 550px; /* Ancho ajustado para parecerse a la imagen */
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    border: none; /* Sin borde */
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg); /* Sombra más pronunciada para modales */
+  max-width: 500px;
+  width: 90%;
+  overflow: hidden;
+  border: 1px solid var(--color-accent-medium);
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px; /* Más espacio */
-    padding-bottom: 0; /* Sin padding inferior */
-    border-bottom: none; /* Sin línea divisoria */
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-accent-medium);
+  background-color: var(--color-background-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .modal-header h2 {
-    font-family: var(--font-secondary);
-    font-size: 2rem;
-    color: var(--color-dark-text);
-    margin: 0;
-    font-weight: 700;
-    letter-spacing: 0.2px;
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--color-primary-darkest);
 }
 
 .modal-body {
-    padding: 0; /* Sin padding en el body, los form-group lo gestionan */
+  padding: var(--spacing-lg);
+  overflow-y: auto;
 }
 
 .form-group {
@@ -55,10 +51,10 @@
 
 .form-group label {
     display: block;
-    margin-bottom: 10px; /* Más espacio entre label e input */
+    margin-bottom: var(--spacing-xs); /* Menos espacio entre label e input */
     font-weight: 600;
-    color: var(--color-dark-text);
-    font-size: 1rem;
+    color: var(--color-text-dark); /* Usar variable de texto oscuro */
+    font-size: 0.95rem; /* Ajustar tamaño de fuente */
 }
 
 .form-group input[type="text"],
@@ -68,51 +64,51 @@
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 12px 15px; /* Ajuste de padding */
-    border: 1px solid var(--color-border-subtle); /* Borde muy sutil por defecto */
-    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md); /* Ajuste de padding */
+    border: 1px solid var(--color-accent-medium); /* Borde sutil */
+    border-radius: var(--border-radius-md); /* Más redondeado */
     font-size: 1rem;
-    color: var(--color-dark-text);
+    color: var(--color-text-dark);
     background-color: var(--color-white); /* Fondo blanco */
-    box-shadow: none; /* Sin sombra interna */
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); /* Sombra interna muy sutil */
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    border-color: var(--color-primary-blue); /* Borde azul al enfocar */
-    box-shadow: 0 0 0 1px var(--color-primary-blue); /* Sombra más sutil */
+    border-color: var(--color-secondary-dark); /* Borde al enfocar */
+    box-shadow: 0 0 0 2px rgba(51, 51, 51, 0.2); /* Sombra al enfocar más notoria */
     outline: none;
 }
 
 .form-group input::placeholder {
-    color: var(--color-secondary-text);
+    color: var(--color-accent-medium); /* Color de placeholder más suave */
 }
 
 .form-row {
-    display: flex;
-    gap: 20px; /* Espacio entre elementos en fila */
-    margin-bottom: 25px; /* Más espacio */
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
 .form-row .form-group {
-    flex: 1;
-    margin-bottom: 0;
+  flex: 1;
+  margin-bottom: 0;
 }
 
 .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px; /* Espacio entre botones */
-    margin-top: 40px; /* Más espacio */
-    padding-top: 0;
-    border-top: none; /* Sin línea divisoria */
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--color-accent-medium);
+  background-color: var(--color-background-light);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
 }
 
 .modal-footer .button-primary {
     min-width: 100px;
-    background-color: var(--color-primary-blue);
+    background-color: var(--color-secondary-dark);
     color: var(--color-white);
     box-shadow: var(--shadow-sm);
     padding: 10px 20px; /* Ajuste de padding */
@@ -120,7 +116,7 @@
 }
 
 .modal-footer .button-primary:hover {
-    background-color: #316DD3;
+    background-color: var(--color-primary-darkest);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
@@ -128,15 +124,15 @@
 .modal-footer .button-secondary {
     min-width: 100px;
     background-color: var(--color-white); /* Fondo blanco */
-    color: var(--color-dark-text);
-    border: 1px solid var(--color-border-subtle);
+    color: var(--color-text-dark);
+    border: 1px solid var(--color-accent-medium);
     box-shadow: var(--shadow-sm);
     padding: 10px 20px; /* Ajuste de padding */
     border-radius: var(--border-radius-sm); /* Menos redondeado */
 }
 
 .modal-footer .button-secondary:hover {
-    background-color: var(--color-border-subtle);
+    background-color: var(--color-accent-medium);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
