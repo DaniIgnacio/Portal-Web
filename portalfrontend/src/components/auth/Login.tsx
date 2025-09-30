@@ -86,6 +86,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </button>
         </form>
         <div className="auth-footer">
+          <p className="forgot-password-link">
+            <Link to="/forgot-password">Olvidé mi contraseña</Link>
+          </p>
           <p>
             ¿No tienes una cuenta? <Link to="/registro">Regístrate aquí</Link>
           </p>

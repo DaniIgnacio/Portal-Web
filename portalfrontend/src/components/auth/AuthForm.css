@@ -20,6 +20,73 @@
   border: 1px solid var(--color-accent-medium); /* Borde suave */
 }
 
+/* Estilos específicos para el formulario de Registro */
+.auth-card.register {
+  max-width: 900px; /* Mucho más ancho para acomodar dos columnas */
+  padding: var(--spacing-xxl); /* Más padding para el diseño expandido */
+}
+
+.register-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
+  gap: var(--spacing-xxl); /* Espacio generoso entre las columnas */
+  margin-bottom: var(--spacing-xl); /* Espacio antes del botón de registro */
+}
+
+.register-grid .grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg); /* Espacio entre los grupos de formulario dentro de una columna */
+}
+
+.register-grid h3 {
+  color: var(--color-primary-darkest);
+  font-size: 1.6rem;
+  margin-bottom: var(--spacing-lg);
+  text-align: left; /* Alineado a la izquierda para cada sección */
+  border-bottom: 1px solid var(--color-accent-medium); /* Separador visual */
+  padding-bottom: var(--spacing-md);
+}
+
+/* Asegurar que los form-group dentro de las columnas no tengan margin-bottom adicional */
+.register-grid .form-group {
+  margin-bottom: 0; 
+}
+
+/* Media queries para responsividad */
+@media (max-width: 992px) {
+  .auth-card.register {
+    max-width: 700px;
+    padding: var(--spacing-xl);
+  }
+  .register-grid {
+    grid-template-columns: 1fr; /* Una sola columna en pantallas medianas */
+    gap: var(--spacing-xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-card.register {
+    max-width: 90%;
+    padding: var(--spacing-lg);
+  }
+  .register-grid {
+    gap: var(--spacing-lg);
+  }
+  .register-grid h3 {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card.register {
+    padding: var(--spacing-md);
+  }
+  .register-grid h3 {
+    font-size: 1.2rem;
+  }
+}
+
 .auth-header {
   margin-bottom: var(--spacing-lg);
 }
@@ -120,4 +187,94 @@
   font-size: 1.5rem;
   margin-bottom: var(--spacing-lg);
   text-align: center;
+}
+
+/* Estilos para los mensajes de feedback */
+.message-feedback {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-top: var(--spacing-lg) !important; /* Asegurar que el margen se aplique */
+  border: 1px solid transparent;
+}
+
+.success-message {
+  background-color: var(--color-success-light); /* Verde claro */
+  color: var(--color-success-dark); /* Verde oscuro */
+  border-color: var(--color-success); /* Borde verde */
+}
+
+.error-message {
+  background-color: var(--color-error-light); /* Rojo claro */
+  color: var(--color-error-dark); /* Rojo oscuro */
+  border-color: var(--color-error); /* Borde rojo */
+}
+
+.forgot-password-link {
+  margin-top: var(--spacing-sm); /* Un poco de espacio entre el link de forgot y registro */
+}
+
+/* Estilos para el feedback de fortaleza de contraseña */
+.password-strength-feedback {
+  margin-top: var(--spacing-md);
+  text-align: left;
+  padding: var(--spacing-md);
+  background-color: var(--color-background-light);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-accent-medium);
+}
+
+.password-strength-feedback .strength-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-dark);
+  margin-bottom: var(--spacing-xs);
+  display: block;
+}
+
+.password-strength-feedback .strength-debil {
+  color: var(--color-error); /* Rojo para débil */
+}
+
+.password-strength-feedback .strength-media {
+  color: var(--color-info); /* Azul/Naranja para media (podrías usar un naranja si lo prefieres) */
+}
+
+.password-strength-feedback .strength-fuerte {
+  color: var(--color-success); /* Verde para fuerte */
+}
+
+.password-strength-feedback ul {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-sm) 0 0 0;
+}
+
+.password-strength-feedback li {
+  font-size: 0.85rem;
+  color: var(--color-text-dark); /* Color normal para no cumplido */
+  margin-bottom: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.password-strength-feedback li.fulfilled {
+  color: var(--color-success); /* Verde para los cumplidos */
+  font-weight: 500;
+}
+
+.password-strength-feedback li::before {
+  content: '•'; /* Un bullet simple */
+  color: var(--color-accent-medium); /* Color por defecto */
+  font-weight: bold;
+  display: inline-block;
+  width: 1em; 
+  margin-left: -1em;
+}
+
+.password-strength-feedback li.fulfilled::before {
+  content: '✔'; /* Checkmark verde */
+  color: var(--color-success); 
 }

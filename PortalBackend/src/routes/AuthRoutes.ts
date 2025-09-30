@@ -4,7 +4,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey'; // Clave para tokens emitidos por tu backend
+const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET || JWT_SECRET; // Clave para verificar tokens de Supabase
+
+console.log('Backend JWT_SECRET cargado:', JWT_SECRET);
+console.log('Backend SUPABASE_JWT_SECRET cargado:', SUPABASE_JWT_SECRET);
 
 const verifyToken = (req: any, res: any, next: any) => {
     const authHeader = req.headers['authorization'];
@@ -15,12 +19,21 @@ const verifyToken = (req: any, res: any, next: any) => {
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET) as { id_usuario: string, id_ferreteria: string, iat: number, exp: number };
-        req.user = decoded;
+        // Intentar verificar el token con la clave de Supabase primero
+        const decodedSupabase = jwt.verify(token, SUPABASE_JWT_SECRET) as { sub: string, email: string, iat: number, exp: number }; // Tipado para token de Supabase
+        req.user = { id_usuario: decodedSupabase.sub, email: decodedSupabase.email }; // Mapear sub a id_usuario
         next();
     } catch (err) {
-        console.error('Error al verificar token:', err);
-        return res.status(403).json({ error: 'Token inválido o expirado.' });
+        console.error('Error al verificar token con clave de Supabase (intentando fallback a clave local):', err);
+        // Si falla con la clave de Supabase, intentar con la clave local (por si es un token de login/registro de tu propio backend)
+        try {
+            const decodedLocal = jwt.verify(token, JWT_SECRET) as { id_usuario: string, id_ferreteria: string, iat: number, exp: number }; // Tipado para token local
+            req.user = decodedLocal; // Usar el payload completo para tokens locales
+            next();
+        } catch (errFallback) {
+            console.error('Error al verificar token con clave local:', errFallback);
+            return res.status(403).json({ error: 'Token inválido o expirado.' });
+        }
     }
 };
 
@@ -75,17 +88,21 @@ router.post('/register', async (req, res) => {
 });
 
 // Nueva ruta para registro completo (Ferretería + Usuario)
+// Esta ruta ahora SOLO crea la Ferretería y el registro del usuario en public.usuario
+// El registro de AUTH del usuario se hace desde el frontend con Supabase Auth.
 router.post('/register-full', async (req, res) => {
     try {
         const { 
-            nombre, email, contraseña,
+            supabase_auth_id, // El ID UUID del usuario de Supabase Auth
+            nombre, email, // Nombre y email del usuario (para public.usuario)
             rut, razon_social, direccion,
-            latitud, longitud, telefono, api_key
+            latitud, longitud, telefono, api_key,
+            rut_usuario // Añadir RUT del usuario
         } = req.body;
 
-        // 1. Validar campos requeridos para Ferretería y Usuario
-        if (!nombre || !email || !contraseña || !rut || !razon_social || !direccion || !api_key) {
-            return res.status(400).json({ error: 'Todos los campos de usuario y ferretería son requeridos (excepto latitud, longitud, teléfono).' });
+        // 1. Validar campos requeridos para Ferretería y Usuario (excluyendo contraseña del body aquí)
+        if (!supabase_auth_id || !nombre || !email || !rut_usuario || !rut || !razon_social || !direccion || !api_key) {
+            return res.status(400).json({ error: 'Todos los campos de usuario (ID de Supabase, nombre, email, RUT) y ferretería son requeridos (excepto latitud, longitud, teléfono).' });
         }
 
         // 2. Verificar si el RUT de la ferretería ya existe
@@ -99,15 +116,17 @@ router.post('/register-full', async (req, res) => {
             return res.status(409).json({ error: 'Ya existe una ferretería con este RUT.' });
         }
 
-        // 3. Verificar si el email del usuario ya existe
-        const { data: existingUser, error: findUserError } = await supabase
+        // 3. Verificar si el email del usuario ya existe en public.usuario (aunque Supabase Auth ya lo maneja para auth.users)
+        const { data: existingPublicUser, error: findPublicUserError } = await supabase
             .from('usuario')
             .select('id_usuario')
             .eq('email', email)
             .single();
-
-        if (existingUser) {
-            return res.status(409).json({ error: 'El email ya está registrado para otro usuario.' });
+        
+        if (existingPublicUser) {
+            // Esto no debería pasar si el signup en Supabase Auth es exitoso y único
+            // Pero como fallback, si ya existe en public.usuario, es un conflicto.
+            return res.status(409).json({ error: 'El email ya está registrado para otro usuario en la base de datos pública.' });
         }
 
         // 4. Crear la Ferretería
@@ -128,31 +147,33 @@ router.post('/register-full', async (req, res) => {
         }
         const id_ferreteria = newFerreteriaData[0].id_ferreteria;
 
-        // 5. Hashear la contraseña
-        const hashedPassword = await bcrypt.hash(contraseña, 10);
-
-        // 6. Crear el Usuario asociado a la Ferretería
+        // 5. Crear el Usuario en public.usuario, usando el ID de Supabase Auth
         const { data: newUserData, error: insertUserError } = await supabase
             .from('usuario')
-            .insert([{ nombre, email, contraseña_hash: hashedPassword, id_ferreteria, fecha_registro: new Date().toISOString() }])
+            .insert([{ 
+                id_usuario: supabase_auth_id, // Usar el ID de Supabase Auth aquí
+                nombre, email, 
+                contraseña_hash: '', // La contraseña_hash ya no es la principal, pero se mantiene por compatibilidad si es NOT NULL.
+                                    // Opcional: podrías eliminar esta columna si confías solo en Supabase Auth.
+                id_ferreteria, fecha_registro: new Date().toISOString(), rut: rut_usuario 
+            }])
             .select();
 
         if (insertUserError || !newUserData || newUserData.length === 0) {
-            console.error('Error al insertar usuario:', insertUserError);
+            console.error('Error al insertar usuario en la tabla pública:', insertUserError);
             // Si falla el usuario, idealmente deberíamos hacer un rollback de la ferretería
-            // Por simplicidad, no se implementará el rollback aquí, pero es una consideración importante.
-            return res.status(500).json({ error: insertUserError?.message || 'Error al crear el usuario.' });
+            return res.status(500).json({ error: insertUserError?.message || 'Error al crear el usuario en la tabla pública.' });
         }
         const newUser = newUserData[0];
 
-        // 7. Generar JWT
+        // 6. Generar JWT (este token sigue siendo para tu sistema, pero puede no ser necesario si solo usas Supabase Auth)
         const token = jwt.sign({ id_usuario: newUser.id_usuario, id_ferreteria: newUser.id_ferreteria }, JWT_SECRET, { expiresIn: '1h' });
 
         res.status(201).json({ message: 'Ferretería y usuario registrados exitosamente', user: newUser, token });
 
     } catch (error: any) {
-        console.error('Error en el registro completo:', error);
-        res.status(500).json({ error: 'Error interno del servidor durante el registro.' });
+        console.error('Error en el registro completo (backend):', error);
+        res.status(500).json({ error: 'Error interno del servidor durante el registro completo.' });
     }
 });
 
@@ -208,6 +229,59 @@ router.put('/users/:id', verifyToken, async (req: any, res) => {
     } catch (error: any) {
         console.error('Error al actualizar usuario:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// PUT: Actualizar solo la contraseña_hash del usuario en la tabla public.usuario
+router.put('/users/:id/password', verifyToken, async (req: any, res) => {
+    try {
+        const { id } = req.params; // id del usuario a actualizar
+        const { newPassword } = req.body; // La nueva contraseña sin hashear
+        const id_usuario_from_token = req.user.id_usuario; // ID del usuario autenticado desde el token (ahora puede ser de Supabase Auth o local)
+
+        // Asegurarse de que el usuario solo pueda actualizar su propia contraseña
+        if (id !== id_usuario_from_token) {
+            return res.status(403).json({ error: 'No autorizado para actualizar la contraseña de este usuario. ID del token no coincide con el ID de la URL.' });
+        }
+
+        if (!newPassword) {
+            return res.status(400).json({ error: 'Nueva contraseña es requerida.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Antes de actualizar, verificar que el ID de Supabase Auth existe en tu tabla public.usuario
+        const { data: existingPublicUser, error: publicUserError } = await supabase
+            .from('usuario')
+            .select('id_usuario')
+            .eq('id_usuario', id_usuario_from_token) // Buscar por el ID que viene del token de Supabase
+            .single();
+
+        if (publicUserError || !existingPublicUser) {
+            console.error('Error: Usuario de la base de datos pública no encontrado para el ID del token.', publicUserError);
+            return res.status(404).json({ error: 'Usuario no encontrado en la base de datos pública o no autorizado.' });
+        }
+
+        const { data, error } = await supabase
+            .from('usuario')
+            .update({ contraseña_hash: hashedPassword })
+            .eq('id_usuario', id_usuario_from_token) // Usar el ID del token para la actualización
+            .select();
+
+        if (error) {
+            console.error('Error de Supabase al actualizar contraseña de usuario:', error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado o no autorizado para actualizar la contraseña.' });
+        }
+
+        res.json({ message: 'Contraseña de usuario actualizada exitosamente en la base de datos pública.' });
+
+    } catch (error: any) {
+        console.error('Error al actualizar la contraseña de usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor.' });
     }
 });
 

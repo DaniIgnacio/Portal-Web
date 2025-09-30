@@ -4,6 +4,9 @@ import productRoutes from './routes/ProductRoutes';
 import categoryRoutes from './routes/CategoryRoutes';
 import ferreteriaRoutes from './routes/FerreteriaRoutes';
 import authRoutes from './routes/AuthRoutes';
+import dotenv from 'dotenv'; // Importar dotenv
+
+dotenv.config(); // Cargar variables de entorno del archivo .env
 
 const app = express();
 const port = 5000;

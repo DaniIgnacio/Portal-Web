@@ -11,6 +11,8 @@ import CategoriasPage from './pages/CategoriasPage';
 import ProductosPage from './pages/ProductosPage';
 import FerreteriasPage from './pages/FerreteriasPage';
 import PerfilPage from './pages/PerfilPage'; // Nuevo import para PerfilPage
+import ForgotPasswordPage from './pages/ForgotPasswordPage'; // Nuevo import para ForgotPasswordPage
+import ResetPasswordPage from './pages/ResetPasswordPage'; // Nuevo import para ResetPasswordPage
 import { useNotifications } from './hooks/useNotifications';
 import NotificationContainer from './components/common/Notification';
 
@@ -79,6 +81,10 @@ function App() {
         path="/registro"
         element={!isAuthenticated ? <RegistroProveedor onRegisterSuccess={() => navigate('/login')} /> : <Navigate to="/dashboard" />} // Pasa un callback para redireccionar
       />
+
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} /> {/* Nueva ruta para ForgotPasswordPage */}
+
+      <Route path="/reset-password" element={<ResetPasswordPage />} /> {/* Nueva ruta para ResetPasswordPage */}
 
       <Route
         path="/"
