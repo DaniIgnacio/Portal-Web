@@ -24,3 +24,5 @@ portalfrontend/dist/
 
 # Ignorar directorios de build/temp del backend (si existen)
 portalbackend/dist/
+
+*.json
