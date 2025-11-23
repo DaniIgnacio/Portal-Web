@@ -13,6 +13,7 @@ import FerreteriasPage from './pages/FerreteriasPage';
 import PerfilPage from './pages/PerfilPage'; // Nuevo import para PerfilPage
 import ForgotPasswordPage from './pages/ForgotPasswordPage'; // Nuevo import para ForgotPasswordPage
 import ResetPasswordPage from './pages/ResetPasswordPage'; // Nuevo import para ResetPasswordPage
+import CompletarFerreteriaPage from './pages/CompletarFerreteriaPage';
 import { useNotifications } from './hooks/useNotifications';
 import NotificationContainer from './components/common/Notification';
 
@@ -63,8 +64,14 @@ function App() {
 
   const handleLoginSuccess = (user: any, token: string) => {
     handleAuthSuccess(token, JSON.stringify(user));
-    navigate('/dashboard');
-    addNotification('¡Inicio de sesión exitoso!', 'success');
+    if (!user.id_ferreteria) {
+      // Usuario viene, por ejemplo, desde app móvil como "cliente" sin ferretería asociada
+      addNotification('Bienvenido. Completa los datos de tu ferretería para continuar.', 'info');
+      navigate('/completar-ferreteria');
+    } else {
+      navigate('/dashboard');
+      addNotification('¡Inicio de sesión exitoso!', 'success');
+    }
   };
 
   if (loading) {
@@ -85,6 +92,11 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} /> {/* Nueva ruta para ForgotPasswordPage */}
 
       <Route path="/reset-password" element={<ResetPasswordPage />} /> {/* Nueva ruta para ResetPasswordPage */}
+
+      <Route
+        path="/completar-ferreteria"
+        element={isAuthenticated ? <CompletarFerreteriaPage /> : <Navigate to="/login" />}
+      />
 
       <Route
         path="/"

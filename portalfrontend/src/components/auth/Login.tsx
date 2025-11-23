@@ -8,7 +8,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
 
 interface LoginProps {
-  onLoginSuccess: (user: any, token: string) => void; // Cambiado de setIsAuthenticated
+  onLoginSuccess: (user: any, token: string) => void; // Cambiado de setIsAuthenticated.
 }
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {

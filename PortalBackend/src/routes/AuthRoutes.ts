@@ -94,15 +94,22 @@ router.post('/register-full', async (req, res) => {
     try {
         const { 
             supabase_auth_id, // El ID UUID del usuario de Supabase Auth
-            nombre, email, // Nombre y email del usuario (para public.usuario)
-            rut, razon_social, direccion,
-            latitud, longitud, telefono, api_key,
+            nombre, 
+            email, // Nombre y email del usuario (para public.usuario)
+            password, // Contraseña en texto plano para generar contraseña_hash (se asume ya validada en el frontend)
+            rut, 
+            razon_social, 
+            direccion,
+            latitud, 
+            longitud, 
+            telefono, 
+            api_key,
             rut_usuario // Añadir RUT del usuario
         } = req.body;
 
-        // 1. Validar campos requeridos para Ferretería y Usuario (excluyendo contraseña del body aquí)
-        if (!supabase_auth_id || !nombre || !email || !rut_usuario || !rut || !razon_social || !direccion || !api_key) {
-            return res.status(400).json({ error: 'Todos los campos de usuario (ID de Supabase, nombre, email, RUT) y ferretería son requeridos (excepto latitud, longitud, teléfono).' });
+        // 1. Validar campos requeridos para Ferretería y Usuario (incluyendo contraseña para la contraseña_hash local)
+        if (!supabase_auth_id || !nombre || !email || !password || !rut_usuario || !rut || !razon_social || !direccion || !api_key) {
+            return res.status(400).json({ error: 'Todos los campos de usuario (ID de Supabase, nombre, email, contraseña, RUT) y ferretería son requeridos (excepto latitud, longitud, teléfono).' });
         }
 
         // 2. Verificar si el RUT de la ferretería ya existe
@@ -147,15 +154,20 @@ router.post('/register-full', async (req, res) => {
         }
         const id_ferreteria = newFerreteriaData[0].id_ferreteria;
 
-        // 5. Crear el Usuario en public.usuario, usando el ID de Supabase Auth
+        // 5. Crear el hash de la contraseña para mantener compatibilidad con el login del backend
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 6. Crear el Usuario en public.usuario, usando el ID de Supabase Auth
         const { data: newUserData, error: insertUserError } = await supabase
             .from('usuario')
             .insert([{ 
                 id_usuario: supabase_auth_id, // Usar el ID de Supabase Auth aquí
                 nombre, email, 
-                contraseña_hash: '', // La contraseña_hash ya no es la principal, pero se mantiene por compatibilidad si es NOT NULL.
-                                    // Opcional: podrías eliminar esta columna si confías solo en Supabase Auth.
-                id_ferreteria, fecha_registro: new Date().toISOString(), rut: rut_usuario 
+                // Guardar la contraseña_hash para que el login del backend funcione inmediatamente
+                contraseña_hash: hashedPassword,
+                id_ferreteria, 
+                fecha_registro: new Date().toISOString(), 
+                rut: rut_usuario 
             }])
             .select();
 
@@ -166,7 +178,7 @@ router.post('/register-full', async (req, res) => {
         }
         const newUser = newUserData[0];
 
-        // 6. Generar JWT (este token sigue siendo para tu sistema, pero puede no ser necesario si solo usas Supabase Auth)
+        // 7. Generar JWT (este token sigue siendo para tu sistema, pero puede no ser necesario si solo usas Supabase Auth)
         const token = jwt.sign({ id_usuario: newUser.id_usuario, id_ferreteria: newUser.id_ferreteria }, JWT_SECRET, { expiresIn: '1h' });
 
         res.status(201).json({ message: 'Ferretería y usuario registrados exitosamente', user: newUser, token });
@@ -353,27 +365,275 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email y contraseña son requeridos' });
         }
 
+        // 1. Buscar usuario en la tabla pública por email
         const { data: userData, error } = await supabase
             .from('usuario')
             .select('*, ferreteria:id_ferreteria(razon_social)')
             .eq('email', email)
             .single();
 
-        if (error || !userData) {
-            return res.status(400).json({ error: 'Credenciales inválidas' });
+        let finalUser = userData as any | null;
+
+        // 2. Si encontramos usuario y tiene contraseña_hash, intentamos validar contra la contraseña local
+        if (finalUser && finalUser.contraseña_hash) {
+            console.log('Login: usuario encontrado para email.', {
+                email: finalUser.email,
+                id_usuario: finalUser.id_usuario,
+                tiene_contraseña_hash: !!finalUser.contraseña_hash,
+            });
+
+            const isMatch = await bcrypt.compare(contraseña, finalUser.contraseña_hash || '');
+            console.log('Login: resultado de comparación de contraseña local.', { isMatch });
+
+            if (!isMatch) {
+                console.warn('Login: contraseña local no coincide, se intentará validar contra Supabase Auth.');
+                finalUser = null; // Forzar flujo de validación contra Supabase Auth
+            }
+        } else {
+            if (error || !userData) {
+                console.warn('Login: usuario no encontrado en tabla pública o sin contraseña_hash, se intentará validar contra Supabase Auth.', {
+                    email,
+                    error,
+                });
+            } else {
+                console.warn('Login: usuario encontrado pero sin contraseña_hash, se intentará validar contra Supabase Auth.', {
+                    email: userData.email,
+                    id_usuario: userData.id_usuario,
+                });
+            }
         }
 
-        const isMatch = await bcrypt.compare(contraseña, userData.contraseña_hash);
-        if (!isMatch) {
-            return res.status(400).json({ error: 'Credenciales inválidas' });
+        // 3. Si no tenemos usuario válido a nivel local, intentamos validar credenciales contra Supabase Auth
+        if (!finalUser) {
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password: contraseña,
+            });
+
+            if (authError || !authData || !authData.user) {
+                console.error('Login: credenciales inválidas también en Supabase Auth.', { email, authError });
+                return res.status(400).json({ error: 'Credenciales inválidas' });
+            }
+
+            const supabaseUser = authData.user;
+            const supabaseAuthId = supabaseUser.id;
+
+            console.log('Login: usuario validado en Supabase Auth. Sincronizando con tabla pública.', {
+                email: supabaseUser.email,
+                supabaseAuthId,
+            });
+
+            const hashedPassword = await bcrypt.hash(contraseña, 10);
+
+            // 3.a Comprobar si ya existe un usuario con ese id_usuario (caso: usuario creado desde app móvil)
+            const { data: existingById, error: existingByIdError } = await supabase
+                .from('usuario')
+                .select('*, ferreteria:id_ferreteria(razon_social)')
+                .eq('id_usuario', supabaseAuthId)
+                .single();
+
+            if (existingByIdError && existingByIdError.code !== 'PGRST116') {
+                console.error('Login: error al buscar usuario por id_usuario durante sincronización.', existingByIdError);
+            }
+
+            if (existingById) {
+                // 3.b Actualizar contraseña_hash y, opcionalmente, otros campos
+                const { data: updatedUserData, error: updateUserError } = await supabase
+                    .from('usuario')
+                    .update({
+                        contraseña_hash: hashedPassword,
+                        email: existingById.email || supabaseUser.email,
+                        nombre: existingById.nombre || (supabaseUser.user_metadata as any)?.nombre || null,
+                        rol: existingById.rol || 'cliente',
+                    })
+                    .eq('id_usuario', supabaseAuthId)
+                    .select('*, ferreteria:id_ferreteria(razon_social)');
+
+                if (updateUserError || !updatedUserData || updatedUserData.length === 0) {
+                    console.error('Login: error al actualizar usuario existente durante sincronización.', updateUserError);
+                    return res.status(500).json({ error: 'Error al sincronizar usuario con la base de datos pública.' });
+                }
+
+                finalUser = updatedUserData[0];
+            } else {
+                // 3.c Crear nuevo usuario en tabla pública con rol "cliente" y sin ferretería
+                const { data: newUserData, error: insertUserError } = await supabase
+                    .from('usuario')
+                    .insert([
+                        {
+                            id_usuario: supabaseAuthId,
+                            nombre: (supabaseUser.user_metadata as any)?.nombre || null,
+                            email: supabaseUser.email,
+                            contraseña_hash: hashedPassword,
+                            rol: 'cliente',
+                            id_ferreteria: null,
+                            fecha_registro: new Date().toISOString(),
+                        },
+                    ])
+                    .select('*, ferreteria:id_ferreteria(razon_social)');
+
+                if (insertUserError || !newUserData || newUserData.length === 0) {
+                    console.error('Login: error al crear usuario nuevo durante sincronización.', insertUserError);
+                    return res.status(500).json({ error: 'Error al crear usuario en la base de datos pública.' });
+                }
+
+                finalUser = newUserData[0];
+            }
         }
 
-        const token = jwt.sign({ id_usuario: userData.id_usuario, id_ferreteria: userData.id_ferreteria }, JWT_SECRET, { expiresIn: '1h' });
+        // 4. Si después de todo seguimos sin usuario, devolver error
+        if (!finalUser) {
+            console.error('Login: no se pudo obtener/crear usuario final después de la sincronización.');
+            return res.status(500).json({ error: 'Error interno al procesar el inicio de sesión.' });
+        }
 
-        res.json({ message: 'Inicio de sesión exitoso', token, user: { id_usuario: userData.id_usuario, nombre: userData.nombre, email: userData.email, id_ferreteria: userData.id_ferreteria, ferreteria_razon_social: userData.ferreteria?.razon_social } });
+        // 5. Generar token local con la info de la tabla pública
+        const token = jwt.sign(
+            { id_usuario: finalUser.id_usuario, id_ferreteria: finalUser.id_ferreteria },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.json({
+            message: 'Inicio de sesión exitoso',
+            token,
+            user: {
+                id_usuario: finalUser.id_usuario,
+                nombre: finalUser.nombre,
+                email: finalUser.email,
+                id_ferreteria: finalUser.id_ferreteria,
+                rol: finalUser.rol,
+                ferreteria_razon_social: finalUser.ferreteria?.razon_social,
+            },
+        });
     } catch (error: any) {
         console.error('Error al iniciar sesión:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// GET: Obtener información básica del usuario (incluye rol e id_ferreteria)
+router.get('/users/:id', verifyToken, async (req: any, res) => {
+    try {
+        const { id } = req.params;
+        const { id_usuario } = req.user;
+
+        if (id !== id_usuario) {
+            return res.status(403).json({ error: 'No autorizado para ver este usuario.' });
+        }
+
+        const { data, error } = await supabase
+            .from('usuario')
+            .select('id_usuario, nombre, email, id_ferreteria, rol')
+            .eq('id_usuario', id)
+            .single();
+
+        if (error || !data) {
+            console.error('Error de Supabase al obtener usuario:', error);
+            return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+
+        res.json(data);
+    } catch (error: any) {
+        console.error('Error al obtener usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// POST: Crear ferretería para un usuario existente y enlazarla (rol pasa a "ambos")
+router.post('/users/:id/link-ferreteria', verifyToken, async (req: any, res) => {
+    try {
+        const { id } = req.params;
+        const { id_usuario } = req.user;
+
+        if (id !== id_usuario) {
+            return res.status(403).json({ error: 'No autorizado para modificar este usuario.' });
+        }
+
+        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key } = req.body;
+
+        if (!rut || !razon_social || !direccion || !api_key) {
+            return res.status(400).json({ error: 'RUT, razón social, dirección y API key son requeridos.' });
+        }
+
+        // Verificar que el usuario exista y aún no tenga ferretería
+        const { data: existingUser, error: existingUserError } = await supabase
+            .from('usuario')
+            .select('id_usuario, id_ferreteria, rol')
+            .eq('id_usuario', id)
+            .single();
+
+        if (existingUserError || !existingUser) {
+            console.error('Error al buscar usuario para enlace de ferretería:', existingUserError);
+            return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+
+        if (existingUser.id_ferreteria) {
+            return res.status(400).json({ error: 'El usuario ya tiene una ferretería asociada.' });
+        }
+
+        // Verificar si el RUT de la ferretería ya existe
+        const { data: existingFerreteria, error: findFerreteriaError } = await supabase
+            .from('ferreteria')
+            .select('id_ferreteria')
+            .eq('rut', rut)
+            .single();
+
+        if (existingFerreteria) {
+            return res.status(409).json({ error: 'Ya existe una ferretería con este RUT.' });
+        }
+
+        // Crear la ferretería
+        const { data: newFerreteriaData, error: insertFerreteriaError } = await supabase
+            .from('ferreteria')
+            .insert([{
+                rut,
+                razon_social,
+                direccion,
+                latitud: latitud ? parseFloat(latitud) : null,
+                longitud: longitud ? parseFloat(longitud) : null,
+                telefono: telefono || null,
+                api_key
+            }])
+            .select();
+
+        if (insertFerreteriaError || !newFerreteriaData || newFerreteriaData.length === 0) {
+            console.error('Error al insertar ferretería desde link-ferreteria:', insertFerreteriaError);
+            return res.status(500).json({ error: insertFerreteriaError?.message || 'Error al crear la ferretería.' });
+        }
+
+        const id_ferreteria = newFerreteriaData[0].id_ferreteria;
+
+        // Actualizar usuario para enlazar ferretería y rol = "ambos"
+        const { data: updatedUserData, error: updateUserError } = await supabase
+            .from('usuario')
+            .update({ id_ferreteria, rol: 'ambos' })
+            .eq('id_usuario', id)
+            .select();
+
+        if (updateUserError || !updatedUserData || updatedUserData.length === 0) {
+            console.error('Error al actualizar usuario al enlazar ferretería:', updateUserError);
+            return res.status(500).json({ error: updateUserError?.message || 'Error al actualizar el usuario.' });
+        }
+
+        const updatedUser = updatedUserData[0];
+
+        // Generar un nuevo token con el id_ferreteria actualizado
+        const token = jwt.sign(
+            { id_usuario: updatedUser.id_usuario, id_ferreteria: updatedUser.id_ferreteria },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.status(201).json({
+            message: 'Ferretería creada y enlazada al usuario exitosamente.',
+            user: updatedUser,
+            ferreteria: newFerreteriaData[0],
+            token
+        });
+    } catch (error: any) {
+        console.error('Error en link-ferreteria:', error);
+        res.status(500).json({ error: 'Error interno del servidor.' });
     }
 });
 
