@@ -34,7 +34,6 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     // Validar fortaleza mínima de la contraseña antes de enviar
     if (passwordStrength.strength === 'Débil') {
       addNotification('Tu contraseña es demasiado débil. Por favor, mejora su fortaleza.', 'error');
@@ -50,6 +49,12 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
       });
 
       if (authError) {
+        // Caso especial: el usuario ya existe en Supabase Auth
+        if (authError.message && authError.message.toLowerCase().includes('already registered')) {
+          addNotification('Este correo ya tiene una cuenta. Por favor, inicia sesión para registrar tu ferretería.', 'info');
+          navigate('/login');
+          return;
+        }
         throw new Error(authError.message);
       }
 
@@ -64,7 +69,8 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
         supabase_auth_id: supabaseAuthId, // ID de Supabase Auth
         nombre,
         email,
-        // La contraseña ya no se envía aquí, Supabase Auth la gestiona
+        // Enviamos la contraseña al backend para mantener sincronizada la contraseña_hash
+        password,
         rut_usuario: rutUsuario,
         rut,
         razon_social: razonSocial,
