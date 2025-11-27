@@ -27,6 +27,7 @@ const AddEditProductModal: React.FC<ModalProps> = ({
     stock: 0,
     id_categoria: '',
     id_ferreteria: '' // id_ferreteria se mantendrá en el estado pero no se modificará desde aquí
+    
   });
 
   useEffect(() => {
