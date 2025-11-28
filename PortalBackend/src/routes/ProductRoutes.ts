@@ -48,30 +48,41 @@ router.get('/productos', verifyToken, async (req: any, res) => {
 
 // POST: Crear un nuevo producto
 router.post('/productos', verifyToken, async (req: any, res) => {
-    const { nombre, sku, precio, stock, id_categoria } = req.body;
+    const {
+        nombre,
+        sku,
+        precio,
+        stock,
+        id_categoria,
+        imagen_url  // 🔥 AGREGADO
+    } = req.body;
+
     const { id_ferreteria } = req.user;
 
     const numericPrecio = parseFloat(precio);
     const integerStock = parseInt(stock, 10);
+
     if (isNaN(numericPrecio) || isNaN(integerStock)) {
         return res.status(400).json({ error: 'Precio y stock deben ser números válidos.' });
     }
+
     if (!id_categoria) {
         return res.status(400).json({ error: 'La categoría es requerida.' });
     }
 
-    // const precioEnCentavos = Math.round(numericPrecio * 100); // Eliminado para manejar precios como enteros CLP
-
     const { data, error } = await supabase
         .from('producto')
-        .insert([{
-            nombre,
-            sku,
-            precio: numericPrecio, // Almacenar directamente como número
-            stock: integerStock,
-            id_categoria,
-            id_ferreteria
-        }])
+        .insert([
+            {
+                nombre,
+                sku,
+                precio: numericPrecio,
+                stock: integerStock,
+                id_categoria,
+                id_ferreteria,
+                imagen_url  // 🔥 AHORA SÍ SE GUARDA EN LA BD
+            }
+        ])
         .select(`
             *,
             categoria:id_categoria (
@@ -86,56 +97,50 @@ router.post('/productos', verifyToken, async (req: any, res) => {
         return res.status(500).json({ error: error.message });
     }
 
-    console.log('Respuesta de Supabase al insertar:', data);
     res.status(201).json(data[0]);
 });
+
 
 // PUT: Actualizar un producto existente
 router.put('/productos/:id', verifyToken, async (req: any, res) => {
     const { id } = req.params;
-    const { nombre, sku, precio, stock, id_categoria } = req.body;
-    const { id_ferreteria } = req.user;
+    const {
+        nombre,
+        sku,
+        precio,
+        stock,
+        id_categoria,
+        imagen_url  // 🔥 AGREGADO
+    } = req.body;
 
     const numericPrecio = parseFloat(precio);
     const integerStock = parseInt(stock, 10);
+
     if (isNaN(numericPrecio) || isNaN(integerStock)) {
         return res.status(400).json({ error: 'Precio y stock deben ser números válidos.' });
     }
 
-    // const precioEnCentavos = Math.round(numericPrecio * 100); // Eliminado para manejar precios como enteros CLP
-
-    const updateData: any = {
-        nombre,
-        sku,
-        precio: numericPrecio, // Almacenar directamente como número
-        stock: integerStock
-    };
-
-    if (id_categoria) updateData.id_categoria = id_categoria;
-
     const { data, error } = await supabase
         .from('producto')
-        .update(updateData)
+        .update({
+            nombre,
+            sku,
+            precio: numericPrecio,
+            stock: integerStock,
+            id_categoria,
+            imagen_url  // 🔥 AHORA SÍ ACTUALIZA LA IMAGEN
+        })
         .eq('id_producto', id)
-        .eq('id_ferreteria', id_ferreteria)
-        .select(`
-            *,
-            categoria:id_categoria (
-                id_categoria,
-                nombre,
-                descripcion
-            )
-        `);
+        .select();
 
     if (error) {
-        console.error('Error de Supabase al actualizar:', error);
+        console.error('Error en Supabase:', error);
         return res.status(500).json({ error: error.message });
     }
-    if (!data || data.length === 0) {
-        return res.status(404).json({ error: 'Producto no encontrado o no autorizado para actualizar.' });
-    }
-    res.json(data[0]);
+
+    res.status(200).json(data[0]);
 });
+
 
 // DELETE: Eliminar un producto
 router.delete('/productos/:id', verifyToken, async (req: any, res) => {
