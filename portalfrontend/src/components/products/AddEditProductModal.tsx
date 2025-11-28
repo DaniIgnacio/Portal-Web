@@ -1,6 +1,8 @@
 import { Product, Category } from './ProductList';
 import './AddEditProductModal.css';
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../supabaseClient';
+
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ interface ModalProps {
   categories: Category[];
   // ferreterias: Ferreteria[]; // Ya no es necesario
 }
+
 
 const AddEditProductModal: React.FC<ModalProps> = ({
   isOpen,
@@ -26,7 +29,9 @@ const AddEditProductModal: React.FC<ModalProps> = ({
     precio: 0,
     stock: 0,
     id_categoria: '',
-    id_ferreteria: '' // id_ferreteria se mantendrá en el estado pero no se modificará desde aquí
+    id_ferreteria: '', // id_ferreteria se mantendrá en el estado pero no se modificará desde aquí
+    imagen_url: ''
+    
   });
 
   useEffect(() => {
@@ -40,7 +45,8 @@ const AddEditProductModal: React.FC<ModalProps> = ({
         precio: 0,
         stock: 0,
         id_categoria: '',
-        id_ferreteria: '' // Se inicializa vacío, el backend lo asignará
+        id_ferreteria: '', // Se inicializa vacío, el backend lo asignará
+        imagen_url:'',
       });
     }
   }, [productToEdit, isOpen]);
@@ -59,6 +65,33 @@ const AddEditProductModal: React.FC<ModalProps> = ({
       }));
     }
   };
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}.${fileExt}`;
+  const filePath = `productos/${fileName}`;
+
+  const { data, error } = await supabase.storage
+    .from('productos')
+    .upload(filePath, file, { upsert: false });
+
+  if (error) {
+    console.error('Error subiendo imagen:', error);
+    return;
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from('productos')
+    .getPublicUrl(filePath);
+
+  setProduct(prev => ({
+    ...prev,
+    imagen_url: publicUrlData.publicUrl
+  }));
+};
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,25 +157,19 @@ const AddEditProductModal: React.FC<ModalProps> = ({
               </select>
             </div>
 
-            {/* El campo de Ferretería ya no es necesario aquí, el backend lo asigna automáticamente */}
-            {/* <div className="form-group">
-              <label htmlFor="id_ferreteria">Ferretería</label>
-              <select
-                id="id_ferreteria"
-                name="id_ferreteria"
-                value={product.id_ferreteria}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Seleccionar ferretería</option>
-                {ferreterias.map((ferreteria) => (
-                  <option key={ferreteria.id_ferreteria} value={ferreteria.id_ferreteria}>
-                    {ferreteria.razon_social} ({ferreteria.rut})
-                  </option>
-                ))}
-              </select>
-            </div> */}
+            <div className="form-group">
+              <label htmlFor="imagen">Imagen del producto</label>
+              <input
+                id="imagen"
+                name="imagen"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+            </div>
+
           </div>
+                     
 
           <div className="modal-footer">
             <button type="button" className="button-secondary" onClick={onClose}>Cancelar</button>

@@ -22,6 +22,7 @@ export interface Product {
   stock: number;
   id_categoria: string;
   id_ferreteria: string;
+  imagen_url?:string;
   categoria?: Category;
   ferreteria?: Ferreteria;
 }
