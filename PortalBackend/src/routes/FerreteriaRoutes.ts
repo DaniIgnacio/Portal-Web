@@ -22,10 +22,59 @@ router.get('/ferreterias', async (req, res) => {
     }
 });
 
+// GET: Obtener una ferretería por ID
+router.get('/ferreterias/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { data, error } = await supabase
+            .from('ferreteria')
+            .select('*')
+            .eq('id_ferreteria', id)
+            .single();
+
+        if (error || !data) {
+            console.error('Error de Supabase al obtener ferretería por ID:', error);
+            return res.status(404).json({ error: 'Ferretería no encontrada' });
+        }
+
+        res.json(data);
+    } catch (error) {
+        console.error('Error al obtener la ferretería:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// GET: Obtener una ferretería por ID
+router.get('/ferreterias/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { data, error } = await supabase
+            .from('ferreteria')
+            .select('*')
+            .eq('id_ferreteria', id)
+            .single();
+
+        if (error) {
+            console.error('Error de Supabase al obtener ferretería por ID:', error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        if (!data) {
+            return res.status(404).json({ error: 'Ferretería no encontrada' });
+        }
+
+        res.json(data);
+    } catch (error) {
+        console.error('Error al obtener ferretería por ID:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // POST: Crear una nueva ferretería
 router.post('/ferreterias', async (req, res) => {
     try {
-        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key } = req.body;
+        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario } = req.body;
 
         if (!rut || !razon_social || !direccion) {
             return res.status(400).json({
@@ -35,7 +84,7 @@ router.post('/ferreterias', async (req, res) => {
 
         const { data, error } = await supabase
             .from('ferreteria')
-            .insert([{ rut, razon_social, direccion, latitud, longitud, telefono, api_key }])
+            .insert([{ rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario }])
             .select();
 
         if (error) {
@@ -54,7 +103,7 @@ router.post('/ferreterias', async (req, res) => {
 router.put('/ferreterias/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key } = req.body;
+        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario } = req.body;
 
         if (!rut || !razon_social || !direccion) {
             return res.status(400).json({
@@ -64,7 +113,7 @@ router.put('/ferreterias/:id', async (req, res) => {
 
         const { data, error } = await supabase
             .from('ferreteria')
-            .update({ rut, razon_social, direccion, latitud, longitud, telefono, api_key })
+            .update({ rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario })
             .eq('id_ferreteria', id)
             .select();
 

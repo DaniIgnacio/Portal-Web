@@ -104,15 +104,29 @@ router.post('/register-full', async (req, res) => {
             longitud, 
             telefono, 
             api_key,
+            descripcion,
+            horario,
             rut_usuario // Añadir RUT del usuario
         } = req.body;
-
         // 1. Validar campos requeridos para Ferretería y Usuario (incluyendo contraseña para la contraseña_hash local)
         if (!supabase_auth_id || !nombre || !email || !password || !rut_usuario || !rut || !razon_social || !direccion || !api_key) {
             return res.status(400).json({ error: 'Todos los campos de usuario (ID de Supabase, nombre, email, contraseña, RUT) y ferretería son requeridos (excepto latitud, longitud, teléfono).' });
         }
 
         // 2. Verificar si el RUT de la ferretería ya existe
+            // Validate horario if provided as JSON string
+            let parsedHorario: any = null;
+            if (horario) {
+                if (typeof horario === 'string') {
+                    try {
+                        parsedHorario = JSON.parse(horario);
+                    } catch (err) {
+                        return res.status(400).json({ error: 'Formato inválido de horario. Debe ser JSON válido.' });
+                    }
+                } else {
+                    parsedHorario = horario;
+                }
+            }
         const { data: existingFerreteria, error: findFerreteriaError } = await supabase
             .from('ferreteria')
             .select('id_ferreteria')
@@ -123,7 +137,6 @@ router.post('/register-full', async (req, res) => {
             return res.status(409).json({ error: 'Ya existe una ferretería con este RUT.' });
         }
 
-        // 3. Verificar si el email del usuario ya existe en public.usuario (aunque Supabase Auth ya lo maneja para auth.users)
         const { data: existingPublicUser, error: findPublicUserError } = await supabase
             .from('usuario')
             .select('id_usuario')
@@ -140,11 +153,13 @@ router.post('/register-full', async (req, res) => {
         const { data: newFerreteriaData, error: insertFerreteriaError } = await supabase
             .from('ferreteria')
             .insert([{ 
-                rut, razon_social, direccion,
+                    rut, razon_social, direccion,
                 latitud: latitud ? parseFloat(latitud) : null,
                 longitud: longitud ? parseFloat(longitud) : null,
                 telefono: telefono || null,
-                api_key
+                api_key,
+                descripcion: descripcion || null,
+                horario: parsedHorario || null
             }])
             .select();
 
@@ -181,7 +196,7 @@ router.post('/register-full', async (req, res) => {
         // 7. Generar JWT (este token sigue siendo para tu sistema, pero puede no ser necesario si solo usas Supabase Auth)
         const token = jwt.sign({ id_usuario: newUser.id_usuario, id_ferreteria: newUser.id_ferreteria }, JWT_SECRET, { expiresIn: '1h' });
 
-        res.status(201).json({ message: 'Ferretería y usuario registrados exitosamente', user: newUser, token });
+        res.status(201).json({ message: 'Ferretería y usuario registrados exitosamente', user: newUser, ferreteria: newFerreteriaData[0], token });
 
     } catch (error: any) {
         console.error('Error en el registro completo (backend):', error);
@@ -550,7 +565,7 @@ router.post('/users/:id/link-ferreteria', verifyToken, async (req: any, res) => 
             return res.status(403).json({ error: 'No autorizado para modificar este usuario.' });
         }
 
-        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key } = req.body;
+        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario } = req.body;
 
         if (!rut || !razon_social || !direccion || !api_key) {
             return res.status(400).json({ error: 'RUT, razón social, dirección y API key son requeridos.' });
@@ -593,7 +608,9 @@ router.post('/users/:id/link-ferreteria', verifyToken, async (req: any, res) => 
                 latitud: latitud ? parseFloat(latitud) : null,
                 longitud: longitud ? parseFloat(longitud) : null,
                 telefono: telefono || null,
-                api_key
+                api_key,
+                descripcion: descripcion || null,
+                horario: horario || null
             }])
             .select();
 
