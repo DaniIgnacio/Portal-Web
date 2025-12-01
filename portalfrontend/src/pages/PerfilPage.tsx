@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatHorarioList, formatHorarioSummary } from '../utils/horarioUtils';
 import './PerfilPage.css';
 import { useNotifications } from '../hooks/useNotifications';
 
@@ -19,6 +20,8 @@ interface FerreteriaData {
   longitud?: number;
   telefono?: string;
   api_key: string;
+  descripcion?: string;
+  horario?: any;
 }
 
 const PerfilPage: React.FC = () => {
@@ -86,6 +89,11 @@ const PerfilPage: React.FC = () => {
     setEditedFerreteria(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFerreteriaTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditedFerreteria(prev => ({ ...prev, [name]: value }));
+  };
+
   const getAuthHeaders = (): HeadersInit => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -125,10 +133,23 @@ const PerfilPage: React.FC = () => {
     if (!ferreteriaData) return;
     setIsLoading(true);
     try {
+      // Prepare payload: if horario is a valid JSON string, parse it
+      const payload: any = { ...editedFerreteria };
+      if (payload.horario && typeof payload.horario === 'string') {
+        try {
+          payload.horario = JSON.parse(payload.horario);
+        } catch (err) {
+          // If parsing fails, keep as string (backend may accept), but warn
+          addNotification('Formato de horario inválido. Debe ser JSON.', 'error');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const response = await fetch(`${API_URL}/ferreterias/${ferreteriaData.id_ferreteria}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
-        body: JSON.stringify(editedFerreteria),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -248,6 +269,34 @@ const PerfilPage: React.FC = () => {
                   <input type="text" name="api_key" value={editedFerreteria.api_key || ''} onChange={handleFerreteriaChange} />
                 ) : (
                   <span>{ferreteriaData.api_key}</span>
+                )}
+              </div>
+              <div className="form-group">
+                <label>Descripción:</label>
+                {isEditingFerreteria ? (
+                  <textarea name="descripcion" value={editedFerreteria.descripcion as string || ''} onChange={handleFerreteriaTextAreaChange} rows={3} />
+                ) : (
+                  <span>{ferreteriaData.descripcion || 'N/A'}</span>
+                )}
+              </div>
+              <div className="form-group">
+                <label>Horario:</label>
+                {isEditingFerreteria ? (
+                  <textarea
+                    name="horario"
+                    value={typeof editedFerreteria.horario === 'object' ? JSON.stringify(editedFerreteria.horario, null, 2) : (editedFerreteria.horario as string || '')}
+                    onChange={handleFerreteriaTextAreaChange}
+                    rows={6}
+                  />
+                ) : (
+                  <div>
+                    <span>{formatHorarioSummary(ferreteriaData.horario)}</span>
+                    <ul className="horario-list">
+                      {formatHorarioList(ferreteriaData.horario).map(item => (
+                        <li key={item.day}><strong>{item.day}:</strong> {item.time}</li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
               {isEditingFerreteria && (

@@ -24,6 +24,8 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
     longitud: '',
     telefono: '',
     api_key: '',
+    descripcion: '',
+    horario: '',
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -38,6 +40,8 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
         longitud: ferreteriaToEdit.longitud?.toString() || '',
         telefono: ferreteriaToEdit.telefono || '',
         api_key: ferreteriaToEdit.api_key,
+        descripcion: ferreteriaToEdit.descripcion || '',
+        horario: ferreteriaToEdit.horario ? JSON.stringify(ferreteriaToEdit.horario, null, 2) : '',
       });
     } else {
       setFormData({
@@ -48,13 +52,14 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
         longitud: '',
         telefono: '',
         api_key: '',
+        descripcion: '',
+        horario: '',
       });
     }
     setErrors({});
   }, [ferreteriaToEdit, isOpen]);
 
   const validateForm = () => {
-    // ... (Tu lógica de validación se mantiene igual)
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.rut.trim()) {
@@ -78,6 +83,14 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
       newErrors.rut = 'Formato de RUT inválido (ej: 12.345.678-9)';
     }
 
+    if (formData.horario) {
+      try {
+        JSON.parse(formData.horario);
+      } catch (error) {
+        newErrors.horario = 'Formato de JSON inválido para el horario';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -95,11 +108,13 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
       longitud: formData.longitud ? parseFloat(formData.longitud) : undefined,
       telefono: formData.telefono.trim() || undefined,
       api_key: formData.api_key.trim(),
+      descripcion: formData.descripcion.trim() || undefined,
+      horario: formData.horario ? JSON.parse(formData.horario) : undefined,
     };
     onSave(ferreteriaData);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -117,10 +132,7 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          {/* 👇 CAMBIO: Envolvemos los campos en un modal-body */}
           <div className="modal-body">
-            
-            {/* CAMBIO: RUT y Razón Social ahora están en filas separadas */}
             <div className="form-group">
               <label htmlFor="rut">RUT *</label>
               <input
@@ -163,7 +175,6 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
               {errors.direccion && <span className="error-message">{errors.direccion}</span>}
             </div>
             
-            {/* CAMBIO: Mantenemos form-row solo para los campos que van juntos */}
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="latitud">Latitud</label>
@@ -203,6 +214,40 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
                 placeholder="+56 9 1234 5678"
               />
             </div>
+            
+            <div className="form-group">
+              <label htmlFor="descripcion">Descripción</label>
+              <textarea
+                id="descripcion"
+                name="descripcion"
+                value={formData.descripcion}
+                onChange={handleChange}
+                placeholder="Breve descripción de la ferretería"
+                rows={3}
+              ></textarea>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="horario">Horario (JSON)</label>
+              <textarea
+                id="horario"
+                name="horario"
+                value={formData.horario}
+                onChange={handleChange}
+                className={errors.horario ? 'error' : ''}
+                placeholder='{
+  "lunes": "09:00-18:00",
+  "martes": "09:00-18:00",
+  "miercoles": "09:00-18:00",
+  "jueves": "09:00-18:00",
+  "viernes": "09:00-18:00",
+  "sabado": "10:00-14:00",
+  "domingo": "cerrado"
+}'
+                rows={7}
+              ></textarea>
+              {errors.horario && <span className="error-message">{errors.horario}</span>}
+            </div>
 
             <div className="form-group">
               <label htmlFor="api_key">API Key *</label>
@@ -217,7 +262,6 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
               />
               {errors.api_key && <span className="error-message">{errors.api_key}</span>}
             </div>
-
           </div>
 
           <div className="modal-footer">
@@ -225,7 +269,6 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
               Cancelar
             </button>
             <button type="submit" className="button-primary">
-              {/* 👇 CAMBIO: Texto del botón más simple */}
               {ferreteriaToEdit ? 'Actualizar' : 'Crear'}
             </button>
           </div>

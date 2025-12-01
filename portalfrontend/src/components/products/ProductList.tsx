@@ -38,6 +38,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, onEdit, onDelete })
     <table className="product-table">
       <thead>
         <tr>
+          <th>Imagen</th>
           <th>Nombre</th>
           <th>SKU</th>
           <th>Precio</th>
@@ -49,6 +50,13 @@ const ProductList: React.FC<ProductListProps> = ({ products, onEdit, onDelete })
       <tbody>
         {products.map((product) => (
           <tr key={product.id_producto}>
+            <td data-label="Imagen">
+              {product.imagen_url ? (
+                <img className="product-thumb" src={product.imagen_url} alt={product.nombre} />
+              ) : (
+                <div className="product-thumb-placeholder">N/A</div>
+              )}
+            </td>
             <td data-label="Nombre">{product.nombre}</td>
             <td data-label="SKU">{product.sku}</td>
             <td data-label="Precio">${(product.precio / 100).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>

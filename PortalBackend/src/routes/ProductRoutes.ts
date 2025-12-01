@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { supabase } from '../supabase';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey'; // ¡Usar una variable de entorno segura en producción!
@@ -70,10 +71,12 @@ router.post('/productos', verifyToken, async (req: any, res) => {
         return res.status(400).json({ error: 'La categoría es requerida.' });
     }
 
+    const id_producto = uuidv4();
     const { data, error } = await supabase
         .from('producto')
         .insert([
             {
+                id_producto,
                 nombre,
                 sku,
                 precio: numericPrecio,

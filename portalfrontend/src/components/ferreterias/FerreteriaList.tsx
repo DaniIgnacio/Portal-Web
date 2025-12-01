@@ -1,5 +1,6 @@
 // src/components/ferreterias/FerreteriaList.tsx
 import React from 'react';
+import { formatHorarioSummary } from '../../utils/horarioUtils';
 import EditIcon from '../common/EditIcon';
 import DeleteIcon from '../common/DeleteIcon';
 import './FerreteriaList.css';
@@ -13,6 +14,8 @@ export interface Ferreteria {
   longitud?: number;
   telefono?: string;
   api_key: string;
+  descripcion?: string;
+  horario?: any;
 }
 
 interface FerreteriaListProps {
@@ -32,7 +35,9 @@ const FerreteriaList: React.FC<FerreteriaListProps> = ({ ferreterias, onEdit, on
             <tr>
               <th>RUT</th>
               <th>Razón Social</th>
+              <th>Descripción</th>
               <th>Dirección</th>
+              <th>Horario</th>
               <th>Teléfono</th>
               <th>Acciones</th>
             </tr>
@@ -42,7 +47,11 @@ const FerreteriaList: React.FC<FerreteriaListProps> = ({ ferreterias, onEdit, on
               <tr key={ferreteria.id_ferreteria}>
                 <td data-label="RUT">{ferreteria.rut}</td>
                 <td data-label="Razón Social">{ferreteria.razon_social}</td>
+                <td data-label="Descripción">{ferreteria.descripcion || 'N/A'}</td>
                 <td data-label="Dirección">{ferreteria.direccion}</td>
+                <td data-label="Horario" title={typeof ferreteria.horario === 'object' ? JSON.stringify(ferreteria.horario) : (ferreteria.horario || '')}>
+                  <span className="horario-badge">{formatHorarioSummary(ferreteria.horario)}</span>
+                </td>
                 <td data-label="Teléfono">{ferreteria.telefono || 'N/A'}</td>
                 <td data-label="Acciones">
                   <div className="action-buttons">

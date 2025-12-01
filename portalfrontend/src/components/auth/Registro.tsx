@@ -8,6 +8,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
 import usePasswordStrength from '../../hooks/usePasswordStrength'; // Importar el hook
 import { supabase } from '../../supabaseClient'; // Corregir la ruta de importación
+import { formatHorarioList } from '../../utils/horarioUtils';
 
 interface RegistroProps {
   onRegisterSuccess: () => void;
@@ -25,6 +26,8 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
   const [longitud, setLongitud] = useState<string>('');
   const [telefono, setTelefono] = useState<string>('');
   const [apiKey, setApiKey] = useState<string>('');
+  const [descripcion, setDescripcion] = useState<string>('');
+  const [horario, setHorario] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const { notifications, addNotification, dismissNotification } = useNotifications();
@@ -65,6 +68,17 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
       const supabaseAuthId = authData.user.id; // Obtener el UUID del usuario de Supabase Auth
 
       // Paso 2: Construir los datos para tu backend, incluyendo el ID de Supabase Auth
+      // Validar horario JSON si está presente
+      if (horario) {
+        try {
+          JSON.parse(horario);
+        } catch (err) {
+          addNotification('El formato del horario JSON es inválido.', 'error');
+          setLoading(false);
+          return;
+        }
+      }
+
       const registerDataToBackend = {
         supabase_auth_id: supabaseAuthId, // ID de Supabase Auth
         nombre,
@@ -79,6 +93,8 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
         longitud: longitud === '' ? undefined : longitud,
         telefono: telefono === '' ? undefined : telefono,
         api_key: apiKey,
+        descripcion: descripcion === '' ? undefined : descripcion,
+        horario: horario ? JSON.parse(horario) : undefined,
       };
 
       // Paso 3: Llamar a tu backend para guardar los detalles adicionales en public.usuario y ferreteria
@@ -255,6 +271,40 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
                   onChange={(e) => setApiKey(e.target.value)}
                   required
                 />
+              </div>
+              <div className="form-group">
+                <label htmlFor="descripcion">Descripción (Opcional)</label>
+                <textarea
+                  id="descripcion"
+                  placeholder="Breve descripción de la ferretería"
+                  value={descripcion}
+                  onChange={(e) => setDescripcion(e.target.value)}
+                  rows={2}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="horario">Horario (Opcional, JSON)</label>
+                <textarea
+                  id="horario"
+                  placeholder={`{\n  "lunes": "09:00-18:00",\n  "sabado": "10:00-14:00"\n}`}
+                  value={horario}
+                  onChange={(e) => setHorario(e.target.value)}
+                  rows={4}
+                  style={{fontFamily:'monospace'}}
+                />
+                {horario && (() => {
+                  try {
+                    const parsed = JSON.parse(horario);
+                    const items = formatHorarioList(parsed);
+                    return (
+                      <ul style={{padding:0, listStyle:'none', marginTop:8}}>
+                        {items.map(i => <li key={i.day}><strong>{i.day}:</strong> {i.time}</li>)}
+                      </ul>
+                    );
+                  } catch (err) {
+                    return <div style={{color:'#e63946'}}>JSON inválido</div>;
+                  }
+                })()}
               </div>
             </div>
           </div>

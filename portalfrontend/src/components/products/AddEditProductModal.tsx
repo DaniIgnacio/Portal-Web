@@ -166,6 +166,11 @@ const AddEditProductModal: React.FC<ModalProps> = ({
                 accept="image/*"
                 onChange={handleImageUpload}
               />
+              {product.imagen_url && (
+                <div style={{marginTop: '8px'}}>
+                  <img src={product.imagen_url} alt="Preview" style={{width: '96px', height: '96px', objectFit: 'cover', borderRadius: 6}} />
+                </div>
+              )}
             </div>
 
           </div>
