@@ -27,7 +27,14 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
   const [telefono, setTelefono] = useState<string>('');
   const [apiKey, setApiKey] = useState<string>('');
   const [descripcion, setDescripcion] = useState<string>('');
-  const [horario, setHorario] = useState<string>('');
+  // Nuevo estado para el horario por días
+  const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+  const [horarioDias, setHorarioDias] = useState<{ [key: string]: { apertura: string; cierre: string } }>(
+    diasSemana.reduce((acc, dia) => {
+      acc[dia] = { apertura: '', cierre: '' };
+      return acc;
+    }, {} as { [key: string]: { apertura: string; cierre: string } })
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const { notifications, addNotification, dismissNotification } = useNotifications();
@@ -68,12 +75,29 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
       const supabaseAuthId = authData.user.id; // Obtener el UUID del usuario de Supabase Auth
 
       // Paso 2: Construir los datos para tu backend, incluyendo el ID de Supabase Auth
-      // Validar horario JSON si está presente
-      if (horario) {
-        try {
-          JSON.parse(horario);
-        } catch (err) {
-          addNotification('El formato del horario JSON es inválido.', 'error');
+      // Construir el objeto horario a partir de los inputs
+      let horarioJson: { [key: string]: string } = {};
+      diasSemana.forEach((dia) => {
+        const apertura = horarioDias[dia].apertura;
+        const cierre = horarioDias[dia].cierre;
+        if (apertura && cierre) {
+          horarioJson[dia] = `${apertura}-${cierre}`;
+        }
+      });
+
+      // Validar que al menos un día tenga horario
+      if (Object.keys(horarioJson).length === 0) {
+        addNotification('Debes ingresar el horario de al menos un día.', 'error');
+        setLoading(false);
+        return;
+      }
+
+      // Validar que para cada día, apertura < cierre (si ambos están provistos)
+      for (const dia of Object.keys(horarioJson)) {
+        const [apertura, cierre] = horarioJson[dia].split('-');
+        // Compare strings 'HH:MM' works for 24-hour format
+        if (apertura >= cierre) {
+          addNotification(`En ${dia} la hora de apertura debe ser menor que la de cierre.`, 'error');
           setLoading(false);
           return;
         }
@@ -83,7 +107,6 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
         supabase_auth_id: supabaseAuthId, // ID de Supabase Auth
         nombre,
         email,
-        // Enviamos la contraseña al backend para mantener sincronizada la contraseña_hash
         password,
         rut_usuario: rutUsuario,
         rut,
@@ -94,7 +117,7 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
         telefono: telefono === '' ? undefined : telefono,
         api_key: apiKey,
         descripcion: descripcion === '' ? undefined : descripcion,
-        horario: horario ? JSON.parse(horario) : undefined,
+        horario: horarioJson,
       };
 
       // Paso 3: Llamar a tu backend para guardar los detalles adicionales en public.usuario y ferreteria
@@ -283,28 +306,42 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="horario">Horario (Opcional, JSON)</label>
-                <textarea
-                  id="horario"
-                  placeholder={`{\n  "lunes": "09:00-18:00",\n  "sabado": "10:00-14:00"\n}`}
-                  value={horario}
-                  onChange={(e) => setHorario(e.target.value)}
-                  rows={4}
-                  style={{fontFamily:'monospace'}}
-                />
-                {horario && (() => {
-                  try {
-                    const parsed = JSON.parse(horario);
-                    const items = formatHorarioList(parsed);
-                    return (
-                      <ul style={{padding:0, listStyle:'none', marginTop:8}}>
-                        {items.map(i => <li key={i.day}><strong>{i.day}:</strong> {i.time}</li>)}
-                      </ul>
-                    );
-                  } catch (err) {
-                    return <div style={{color:'#e63946'}}>JSON inválido</div>;
-                  }
-                })()}
+                <label>Horario de Atención</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {diasSemana.map((dia) => (
+                    <div key={dia} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: 90 }}>{dia.charAt(0).toUpperCase() + dia.slice(1)}:</span>
+                      <input
+                        type="time"
+                        value={horarioDias[dia].apertura}
+                        onChange={e => setHorarioDias(prev => ({ ...prev, [dia]: { ...prev[dia], apertura: e.target.value } }))}
+                        style={{ width: 100 }}
+                        placeholder="Apertura"
+                      />
+                      <span>-</span>
+                      <input
+                        type="time"
+                        value={horarioDias[dia].cierre}
+                        onChange={e => setHorarioDias(prev => ({ ...prev, [dia]: { ...prev[dia], cierre: e.target.value } }))}
+                        style={{ width: 100 }}
+                        placeholder="Cierre"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* Vista previa del horario */}
+                {Object.values(horarioDias).some(h => h.apertura && h.cierre) && (
+                  <ul style={{padding:0, listStyle:'none', marginTop:8}}>
+                    {diasSemana.map(dia => {
+                      const apertura = horarioDias[dia].apertura;
+                      const cierre = horarioDias[dia].cierre;
+                      if (apertura && cierre) {
+                        return <li key={dia}><strong>{dia.charAt(0).toUpperCase() + dia.slice(1)}:</strong> {apertura}-{cierre}</li>;
+                      }
+                      return null;
+                    })}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
