@@ -1,0 +1,41 @@
+.clientes-page {
+  padding: 1.25rem;
+}
+
+.clientes-table-container {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.clientes-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border-radius: 6px;
+}
+
+.clientes-table th,
+.clientes-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.clientes-table th {
+  background: #f9fafb;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.clientes-table tr:hover {
+  background: #f6f8fa;
+}
+
+@media (max-width: 600px) {
+  .clientes-table th,
+  .clientes-table td {
+    padding: 8px 10px;
+  }
+}

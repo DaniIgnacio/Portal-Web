@@ -5,6 +5,8 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 // La interfaz Session de Supabase ya no es necesaria
 // import { Session } from '@supabase/supabase-js';
 import DashboardLayout from './components/layout/DashboardLayout';
+import PedidosPage from './pages/PedidosPage';
+import ClientesPage from './pages/ClientesPage';
 import LoginProveedor from './components/auth/Login';
 import RegistroProveedor from './components/auth/Registro';
 import CategoriasPage from './pages/CategoriasPage';
@@ -24,6 +26,8 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string | null>(null); // Nuevo estado para el nombre de usuario
+  const [isFerreteria, setIsFerreteria] = useState<boolean>(false); // Detecta si el usuario es ferretería
+  const [isAdmin, setIsAdmin] = useState<boolean>(false); // Detecta si el usuario es admin
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,9 +51,12 @@ function App() {
     try {
       const user = JSON.parse(userString);
       setUserName(user.nombre); // Establecer el nombre del usuario
+      setIsFerreteria(!!user.id_ferreteria);
+      setIsAdmin(user.rol === 'admin');
     } catch (e) {
       console.error("Error parsing user from localStorage", e);
       setUserName(null);
+      setIsAdmin(false);
     }
   };
 
@@ -58,13 +65,18 @@ function App() {
     localStorage.removeItem('user');
     setIsAuthenticated(false);
     setUserName(null); // Limpiar el nombre al cerrar sesión
+    setIsFerreteria(false);
+    setIsAdmin(false);
     navigate('/login');
     addNotification('Sesión cerrada exitosamente.', 'info');
   };
 
   const handleLoginSuccess = (user: any, token: string) => {
     handleAuthSuccess(token, JSON.stringify(user));
-    if (!user.id_ferreteria) {
+    if (user.rol === 'admin') {
+      navigate('/dashboard');
+      addNotification('¡Inicio de sesión exitoso!', 'success');
+    } else if (!user.id_ferreteria) {
       // Usuario viene, por ejemplo, desde app móvil como "cliente" sin ferretería asociada
       addNotification('Bienvenido. Completa los datos de tu ferretería para continuar.', 'info');
       navigate('/completar-ferreteria');
@@ -105,13 +117,18 @@ function App() {
 
       <Route
         path="/dashboard"
-        element={isAuthenticated ? <DashboardLayout onLogout={handleLogout} userName={userName} /> : <Navigate to="/login" />}
+        element={isAuthenticated ? <DashboardLayout onLogout={handleLogout} userName={userName} isFerreteria={isFerreteria} isAdmin={isAdmin} /> : <Navigate to="/login" />}
       >
-        <Route index element={<Navigate to="productos" replace />} />
-        <Route path="productos" element={<ProductosPage />} />
-        <Route path="categorias" element={<CategoriasPage />} />
-        <Route path="ferreterias" element={<FerreteriasPage />} />
-        <Route path="perfil" element={<PerfilPage />} /> {/* Nueva ruta para PerfilPage */}
+        {/* Rutas para ferretería */}
+        {isFerreteria && <Route index element={<Navigate to="productos" replace />} />}
+        {isFerreteria && <Route path="productos" element={<ProductosPage />} />}
+        {isFerreteria && <Route path="pedidos" element={<PedidosPage />} />}
+        {isFerreteria && <Route path="perfil" element={<PerfilPage />} />}
+        {/* Rutas para admin */}
+        {isAdmin && <Route index element={<Navigate to="ferreterias" replace />} />}
+        {isAdmin && <Route path="ferreterias" element={<FerreteriasPage />} />}
+        {isAdmin && <Route path="categorias" element={<CategoriasPage />} />}
+        {isAdmin && <Route path="clientes" element={<ClientesPage />} />}
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />
