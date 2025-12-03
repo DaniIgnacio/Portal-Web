@@ -4,13 +4,17 @@
   --color-secondary-dark: #333333; /* Gris oscuro para texto y fondos secundarios */
   --color-background-light: #F5F5F5; /* Blanco muy claro para fondos */
   --color-accent-medium: #CCCCCC; /* Gris claro para bordes y separadores */
+  --color-accent-light: #E6E6E6; /* Gris aún más claro para paneles */
+  --color-secondary-light: #EFEFEF; /* Fondo suave para etiquetas */
   --color-text-dark: #444444; /* Gris oscuro para texto principal */
+  --color-text-soft: #666666; /* Texto secundario */
   --color-white: #FFFFFF; /* Blanco puro */
 
   /* Colores funcionales (grises para coherencia con el tema) */
   --color-success: #4CAF50; /* Verde funcional, mantengo este para mensajes de éxito */
   --color-error: #F44336;   /* Rojo funcional, mantengo este para mensajes de error */
   --color-info: #2196F3;    /* Azul funcional, mantengo este para mensajes de información */
+  --color-warning-dark: #F57C00; /* Naranja para advertencias/estados medios */
 
   /* Fuentes - limpias y legibles */
   --font-primary: 'Roboto', sans-serif;
@@ -33,6 +37,7 @@
   --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.12);
   --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.15);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 /* Reseteo de box-sizing para todos los elementos */

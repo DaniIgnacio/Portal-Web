@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@react-google-maps/api": "^2.20.7",
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.2"
   },

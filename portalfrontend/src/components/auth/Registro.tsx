@@ -1,407 +1,827 @@
- // src/pages/Registro.tsx
- import React, { useState, useCallback, useMemo } from 'react';
- import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
- // La línea de SupabaseClient ya no es necesaria
- // import { supabase } from '../../supabaseClient';
- import { Link, useNavigate } from 'react-router-dom';
- import './AuthForm.css';
- import { useNotifications } from '../../hooks/useNotifications';
- import NotificationContainer from '../common/Notification';
- import usePasswordStrength from '../../hooks/usePasswordStrength'; // Importar el hook
- import { supabase } from '../../supabaseClient'; // Corregir la ruta de importación
- import { formatHorarioList } from '../../utils/horarioUtils';
- 
- interface RegistroProps {
-   onRegisterSuccess: () => void;
- }
- 
- // --- CONFIGURACIÓN DE GOOGLE MAPS ---
- const MAP_LIBRARIES = ['places'];
- const mapContainerStyle = {
-   width: '100%',
-   height: '300px',
-   borderRadius: '8px',
- };
- // Coordenadas centradas en la Región de Ñuble (Chillán)
- const defaultCenter = {
-   lat: -36.606,
-   lng: -72.102
- }; const mapOptions = {
-   disableDefaultUI: true,
-   zoomControl: true,
- };
- // --- FIN DE CONFIGURACIÓN ---
- 
- const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
-   const [nombre, setNombre] = useState<string>('');
-   const [email, setEmail] = useState<string>('');
-   const [password, setPassword] = useState<string>('');
-   const [rutUsuario, setRutUsuario] = useState<string>(''); // Nuevo estado para el RUT del usuario
-   const [rut, setRut] = useState<string>('');
-   const [razonSocial, setRazonSocial] = useState<string>('');
-   const [direccion, setDireccion] = useState<string>('');
-   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
-   const [telefono, setTelefono] = useState<string>('');
-   const [apiKey, setApiKey] = useState<string>('');
-   const [descripcion, setDescripcion] = useState<string>('');
-   // Nuevo estado para el horario por días
-   const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-   const [horarioDias, setHorarioDias] = useState<{ [key: string]: { apertura: string; cierre: string } }>(
-     diasSemana.reduce((acc, dia) => {
-       acc[dia] = { apertura: '', cierre: '' };
-       return acc;
-     }, {} as { [key: string]: { apertura: string; cierre: string } })
-   );
-   const [loading, setLoading] = useState<boolean>(false);
-   const navigate = useNavigate();
-   const { notifications, addNotification, dismissNotification } = useNotifications();
-   
-   const passwordStrength = usePasswordStrength(password); // Usar el hook
- 
-   // Cargar el script de Google Maps
-   const { isLoaded, loadError } = useJsApiLoader({
-     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "",
-     libraries: MAP_LIBRARIES as any, // Type assertion due to library typing issue
-   });
- 
-   const onMapClick = useCallback((event: google.maps.MapMouseEvent) => {
-     if (event.latLng) {
-       setMarkerPosition({
-         lat: event.latLng.lat(),
-         lng: event.latLng.lng(),
-       });
-     }
-   }, []);
- 
-   const handleRegister = async (e: React.FormEvent) => {
-     e.preventDefault();
-     setLoading(true);
- 
-     // Validar que se ha seleccionado una ubicación en el mapa
-     if (!markerPosition) {
-       addNotification('Por favor, selecciona la ubicación de la ferretería en el mapa.', 'error');
-       setLoading(false);
-       return;
-     }
- 
-     // Validar fortaleza mínima de la contraseña antes de enviar
-     if (passwordStrength.strength === 'Débil') {
-       addNotification('Tu contraseña es demasiado débil. Por favor, mejora su fortaleza.', 'error');
-       setLoading(false);
-       return;
-     }
- 
-     try {
-       // Paso 1: Registrar al usuario en Supabase Auth primero
-       const { data: authData, error: authError } = await supabase.auth.signUp({
-         email,
-         password,
-       });
- 
-       if (authError) {
-         // Caso especial: el usuario ya existe en Supabase Auth
-         if (authError.message && authError.message.toLowerCase().includes('already registered')) {
-           addNotification('Este correo ya tiene una cuenta. Por favor, inicia sesión para registrar tu ferretería.', 'info');
-           navigate('/login');
-           return;
-         }
-         throw new Error(authError.message);
-       }
- 
-       if (!authData.user) {
-         throw new Error('No se pudo obtener el usuario de Supabase Auth después del registro.');
-       }
- 
-       const supabaseAuthId = authData.user.id; // Obtener el UUID del usuario de Supabase Auth
- 
-       // Paso 2: Construir los datos para tu backend, incluyendo el ID de Supabase Auth
-       // Construir el objeto horario a partir de los inputs
-       let horarioJson: { [key: string]: string } = {};
-       diasSemana.forEach((dia) => {
-         const apertura = horarioDias[dia].apertura;
-         const cierre = horarioDias[dia].cierre;
-         if (apertura && cierre) {
-           horarioJson[dia] = `${apertura}-${cierre}`;
-         }
-       });
- 
-       // Validar que al menos un día tenga horario
-       if (Object.keys(horarioJson).length === 0) {
-         addNotification('Debes ingresar el horario de al menos un día.', 'error');
-         setLoading(false);
-         return;
-       }
- 
-       // Validar que para cada día, apertura < cierre (si ambos están provistos)
-       for (const dia of Object.keys(horarioJson)) {
-         const [apertura, cierre] = horarioJson[dia].split('-');
-         // Compare strings 'HH:MM' works for 24-hour format
-         if (apertura >= cierre) {
-           addNotification(`En ${dia} la hora de apertura debe ser menor que la de cierre.`, 'error');
-           setLoading(false);
-           return;
-         }
-       }
- 
-       const registerDataToBackend = {
-         supabase_auth_id: supabaseAuthId, // ID de Supabase Auth
-         nombre,
-         email,
-         password,
-         rut_usuario: rutUsuario,
-         rut,
-         razon_social: razonSocial,
-         direccion,
-         latitud: markerPosition.lat, // Usar latitud del marcador
-         longitud: markerPosition.lng, // Usar longitud del marcador
-         telefono: telefono === '' ? undefined : telefono,
-         api_key: apiKey,
-         descripcion: descripcion === '' ? undefined : descripcion,
-         horario: horarioJson,
-       };
- 
-       // Paso 3: Llamar a tu backend para guardar los detalles adicionales en public.usuario y ferreteria
-       const response = await fetch('http://localhost:5000/api/register-full', {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-         },
-         body: JSON.stringify(registerDataToBackend),
-       });
- 
-       const data = await response.json();
- 
-       if (!response.ok) {
-         throw new Error(data.error || 'Error al registrar usuario y ferretería en el backend.');
-       }
- 
-       // Llama a la nueva función onRegisterSuccess para actualizar el estado en App.tsx
-       onRegisterSuccess();
-       
-       addNotification('¡Registro exitoso! Ya puedes iniciar sesión.', 'success');
-       // navigate('/login'); // Ya no navegamos aquí
-     } catch (error: any) {
-       console.error('Error en el registro:', error);
-       addNotification(`Error de registro: ${error.message}`, 'error');
-     } finally {
-       setLoading(false);
-     }
-   };
- 
-   if (loadError) return <div>Error al cargar el mapa. Por favor, revisa la configuración de la API Key.</div>;
-   
-   return (
-     <div className="auth-container">
-       <div className="auth-card register"> {/* Añadir clase 'register' aquí */}
-         <div className="auth-header">
-           <h2>Crea tu Cuenta</h2>
-           <p>Ingresa tus datos para registrarte y tu ferretería.</p>
-         </div>
-         <form className="auth-form" onSubmit={handleRegister}>
-           <div className="register-grid"> {/* Contenedor para las dos columnas */}
-             <div className="grid-column"> {/* Columna para datos de usuario */}
-               <h3>Datos de Usuario</h3>
-               <div className="form-group">
-                 <label htmlFor="nombre">Nombre</label>
-                 <input
-                   id="nombre"
-                   type="text"
-                   placeholder="Tu nombre"
-                   value={nombre}
-                   onChange={(e) => setNombre(e.target.value)}
-                   required
-                 />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="email">Correo Electrónico</label>
-                 <input
-                   id="email"
-                   type="email"
-                   placeholder="Tu correo electrónico"
-                   value={email}
-                   onChange={(e) => setEmail(e.target.value)}
-                   required
-                 />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="password">Contraseña</label>
-                 <input
-                   id="password"
-                   type="password"
-                   placeholder="Tu contraseña"
-                   value={password}
-                   onChange={(e) => setPassword(e.target.value)}
-                   required
-                 />
-                 <div className="password-strength-feedback"> {/* Contenedor para el feedback de la contraseña */}
-                   <p className="strength-label">Fortaleza: <span className={`strength-${passwordStrength.strength.toLowerCase()}`}>{passwordStrength.strength}</span></p>
-                   <ul>
-                     <li className={passwordStrength.isLongEnough ? 'fulfilled' : ''}>Al menos 8 caracteres</li>
-                     <li className={passwordStrength.hasUpperCase ? 'fulfilled' : ''}>Una letra mayúscula</li>
-                     <li className={passwordStrength.hasLowerCase ? 'fulfilled' : ''}>Una letra minúscula</li>
-                     <li className={passwordStrength.hasNumber ? 'fulfilled' : ''}>Un número</li>
-                     <li className={passwordStrength.hasSymbol ? 'fulfilled' : ''}>Un símbolo (!@#$...)</li>
-                   </ul>
-                 </div>
-               </div>
-               <div className="form-group"> {/* Nuevo campo para RUT del usuario */}
-                 <label htmlFor="rutUsuario">RUT del Usuario</label>
-                 <input
-                   id="rutUsuario"
-                   type="text"
-                   placeholder="Ej: 12.345.678-9"
-                   value={rutUsuario}
-                   onChange={(e) => setRutUsuario(e.target.value)}
-                   required
-                 />
-               </div>
-             </div>
- 
-             <div className="grid-column"> {/* Columna para datos de ferretería */}
-               <h3>Datos de la Ferretería</h3>
-               <div className="form-group">
-                 <label htmlFor="rut">RUT de la Ferretería</label>
-                 <input
-                   id="rut"
-                   type="text"
-                   placeholder="Ej: 12.345.678-9"
-                   value={rut}
-                   onChange={(e) => setRut(e.target.value)}
-                   required
-                 />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="razonSocial">Razón Social</label>
-                 <input
-                   id="razonSocial"
-                   type="text"
-                   placeholder="Nombre de tu ferretería"
-                   value={razonSocial}
-                   onChange={(e) => setRazonSocial(e.target.value)}
-                   required
-                 />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="direccion">Dirección</label>
-                 <input
-                   id="direccion"
-                   type="text"
-                   placeholder="Dirección de la ferretería"
-                   value={direccion}
-                   onChange={(e) => setDireccion(e.target.value)}
-                   required
-                 />
-               </div>
-               
-               {/* --- INICIO DEL MAPA --- */}
-               <div className="form-group">
-                 <label>Ubicación en el Mapa</label>
-                 <p className="map-instruction">Haz clic en el mapa para colocar el marcador en la ubicación de tu ferretería.</p>
-                 {!isLoaded ? (
-                   <div>Cargando mapa...</div>
-                 ) : (
-                   <GoogleMap
-                     mapContainerStyle={mapContainerStyle}
-                     center={defaultCenter}
-                     zoom={12}
-                     options={mapOptions}
-                     onClick={onMapClick}
-                   >
-                     {markerPosition && <MarkerF position={markerPosition} />}
-                   </GoogleMap>
-                 )}
-               </div>
-               {/* --- FIN DEL MAPA --- */}
- 
-               <div className="form-group">
-                 <label htmlFor="telefono">Teléfono (Opcional)</label>
-                 <input
-                   id="telefono"
-                   type="tel"
-                   placeholder="Ej: +56 9 1234 5678"
-                   value={telefono}
-                   onChange={(e) => setTelefono(e.target.value)}
-                 />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="apiKey">API Key</label>
-                 <input
-                   id="apiKey"
-                   type="text"
-                   placeholder="Clave única para tu ferretería"
-                   value={apiKey}
-                   onChange={(e) => setApiKey(e.target.value)}
-                   required
-                 />
-               </div>
-               <div className="form-group">
-                 <label htmlFor="descripcion">Descripción (Opcional)</label>
-                 <textarea
-                   id="descripcion"
-                   placeholder="Breve descripción de la ferretería"
-                   value={descripcion}
-                   onChange={(e) => setDescripcion(e.target.value)}
-                   rows={2}
-                 />
-               </div>
-               <div className="form-group">
-                 <label>Horario de Atención</label>
-                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                   {diasSemana.map((dia) => (
-                     <div key={dia} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                       <span style={{ width: 90 }}>{dia.charAt(0).toUpperCase() + dia.slice(1)}:</span>
-                       <input
-                         type="time"
-                         value={horarioDias[dia].apertura}
-                         onChange={e => setHorarioDias(prev => ({ ...prev, [dia]: { ...prev[dia], apertura: e.target.value } }))}
-                         style={{ width: 100 }}
-                         placeholder="Apertura"
-                       />
-                       <span>-</span>
-                       <input
-                         type="time"
-                         value={horarioDias[dia].cierre}
-                         onChange={e => setHorarioDias(prev => ({ ...prev, [dia]: { ...prev[dia], cierre: e.target.value } }))}
-                         style={{ width: 100 }}
-                         placeholder="Cierre"
-                       />
-                     </div>
-                   ))}
-                 </div>
-                 {/* Vista previa del horario */}
-                 {Object.values(horarioDias).some(h => h.apertura && h.cierre) && (
-                   <ul style={{padding:0, listStyle:'none', marginTop:8}}>
-                     {diasSemana.map(dia => {
-                       const apertura = horarioDias[dia].apertura;
-                       const cierre = horarioDias[dia].cierre;
-                       if (apertura && cierre) {
-                         return <li key={dia}><strong>{dia.charAt(0).toUpperCase() + dia.slice(1)}:</strong> {apertura}-{cierre}</li>;
-                       }
-                       return null;
-                     })}
-                   </ul>
-                 )}
-               </div>
-             </div>
-           </div>
-           <button 
-             type="submit" 
-             className="auth-button" 
-             disabled={loading || password.length === 0 || passwordStrength.strength === 'Débil' || !passwordStrength.isLongEnough}
-           >
-             {loading ? 'Registrando...' : 'Registrarse'}
-           </button>
-         </form>
-         <div className="auth-footer">
-           <p>
-             ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión aquí</Link>
-           </p>
-         </div>
-       </div>
-       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
-     </div>
-   );
- };
- 
- export default Registro;
- 
+// src/pages/Registro.tsx
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import './AuthForm.css';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationContainer from '../common/Notification';
+import usePasswordStrength from '../../hooks/usePasswordStrength';
+import { supabase } from '../../supabaseClient';
+interface RegistroProps {
+  onRegisterSuccess: () => void;
+}
+
+const STEPS = [
+  {
+    id: 'usuario',
+    title: 'Datos de Usuario',
+    description: 'Completa la información personal para la cuenta principal.',
+  },
+  {
+    id: 'ferreteria',
+    title: 'Datos de la Ferretería',
+    description: 'Describe tu negocio y cómo podemos contactarte.',
+  },
+  {
+    id: 'horario',
+    title: 'Horario y Confirmación',
+    description: 'Define horarios y revisa el resumen antes de registrar.',
+  },
+];
+
+let googleMapsScriptPromise: Promise<void> | null = null;
+
+const loadGoogleMapsApi = (apiKey: string): Promise<void> => {
+  if (typeof window === 'undefined') return Promise.resolve();
+  const google = (window as any).google;
+  if (google?.maps) return Promise.resolve();
+
+  if (!apiKey) {
+    return Promise.reject(new Error('No se ha configurado la clave de Google Maps.'));
+  }
+
+  if (!googleMapsScriptPromise) {
+    googleMapsScriptPromise = new Promise((resolve, reject) => {
+      const scriptId = 'google-maps-script';
+      const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve());
+        existingScript.addEventListener('error', () => {
+          googleMapsScriptPromise = null;
+          reject(new Error('No se pudo cargar Google Maps.'));
+        });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => {
+        googleMapsScriptPromise = null;
+        reject(new Error('No se pudo cargar Google Maps.'));
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  return googleMapsScriptPromise;
+};
+
+const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
+  const [nombre, setNombre] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [rutUsuario, setRutUsuario] = useState<string>('');
+  const [rut, setRut] = useState<string>('');
+  const [razonSocial, setRazonSocial] = useState<string>('');
+  const [direccion, setDireccion] = useState<string>('');
+  const [latitud, setLatitud] = useState<string>('');
+  const [longitud, setLongitud] = useState<string>('');
+  const [telefono, setTelefono] = useState<string>('');
+  const [apiKey, setApiKey] = useState<string>('');
+  const [descripcion, setDescripcion] = useState<string>('');
+  const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+  const [horarioDias, setHorarioDias] = useState<{ [key: string]: { apertura: string; cierre: string } }>(
+    diasSemana.reduce((acc, dia) => {
+      acc[dia] = { apertura: '', cierre: '' };
+      return acc;
+    }, {} as { [key: string]: { apertura: string; cierre: string } })
+  );
+  const [loading, setLoading] = useState<boolean>(false);
+  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
+    lat: -33.4489,
+    lng: -70.6693,
+  });
+  const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const mapClickListenerRef = useRef<any>(null);
+  const markerDragListenerRef = useRef<any>(null);
+  const navigate = useNavigate();
+  const { notifications, addNotification, dismissNotification } = useNotifications();
+  
+  const passwordStrength = usePasswordStrength(password);
+  const currentStepConfig = STEPS[currentStep];
+  const isLastStep = currentStep === STEPS.length - 1;
+  const isPasswordGuard =
+    passwordStrength.strength === 'Débil' || !passwordStrength.isLongEnough || password.length === 0;
+  const mapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY ?? '';
+
+  const horarioPreview = useMemo(
+    () =>
+      diasSemana
+        .map((dia) => {
+          const apertura = horarioDias[dia].apertura;
+          const cierre = horarioDias[dia].cierre;
+          if (!apertura || !cierre) return null;
+          return {
+            etiqueta: dia.charAt(0).toUpperCase() + dia.slice(1),
+            rango: `${apertura} - ${cierre}`,
+          };
+        })
+        .filter((item): item is { etiqueta: string; rango: string } => item !== null),
+    [horarioDias, diasSemana]
+  );
+
+  const apiKeyPreview = useMemo(() => {
+    if (!apiKey) return 'N/D';
+    if (apiKey.length <= 12) return apiKey;
+    return `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`;
+  }, [apiKey]);
+
+  useEffect(() => {
+    const latNum = parseFloat(latitud);
+    const lngNum = parseFloat(longitud);
+
+    if (!Number.isNaN(latNum) && !Number.isNaN(lngNum)) {
+      const next = { lat: latNum, lng: lngNum };
+      setMapCenter(next);
+      setMarkerPosition(next);
+    } else if (latitud === '' && longitud === '') {
+      setMarkerPosition(null);
+      setMapCenter({ lat: -33.4489, lng: -70.6693 });
+    }
+  }, [latitud, longitud]);
+
+  useEffect(() => {
+    if (!mapsApiKey) {
+      setMapReady(false);
+      setMapError('Configura REACT_APP_GOOGLE_MAPS_API_KEY para habilitar Google Maps.');
+      return;
+    }
+
+    setMapError(null);
+    setMapReady(false);
+
+    let isCancelled = false;
+
+    loadGoogleMapsApi(mapsApiKey)
+      .then(() => {
+        if (!isCancelled) {
+          setMapReady(true);
+        }
+      })
+      .catch((error) => {
+        if (!isCancelled) {
+          setMapError(error.message);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [mapsApiKey]);
+
+  const handleMapClick = useCallback(
+    (event: any) => {
+      if (event?.latLng) {
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
+        setLatitud(lat.toFixed(6));
+        setLongitud(lng.toFixed(6));
+        const next = { lat, lng };
+        setMarkerPosition(next);
+        setMapCenter(next);
+      }
+    },
+    []
+  );
+
+  const handleMarkerDragEnd = useCallback((event: any) => {
+    if (event?.latLng) {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      setLatitud(lat.toFixed(6));
+      setLongitud(lng.toFixed(6));
+      setMarkerPosition({ lat, lng });
+      setMapCenter({ lat, lng });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mapReady || !mapContainerRef.current) {
+      return;
+    }
+
+    const google = (window as any).google;
+    if (!google?.maps) {
+      setMapError('No se pudo inicializar Google Maps.');
+      return;
+    }
+
+    const map = new google.maps.Map(mapContainerRef.current, {
+      center: mapCenter,
+      zoom: markerPosition ? 16 : 12,
+      disableDefaultUI: true,
+      zoomControl: true,
+      gestureHandling: 'greedy',
+      minZoom: 4,
+    });
+
+    mapInstanceRef.current = map;
+
+    mapClickListenerRef.current = map.addListener('click', handleMapClick);
+
+    if (markerPosition) {
+      markerRef.current = new google.maps.Marker({
+        position: markerPosition,
+        map,
+        draggable: true,
+      });
+      markerDragListenerRef.current = markerRef.current.addListener('dragend', handleMarkerDragEnd);
+    }
+
+    return () => {
+      if (mapClickListenerRef.current) {
+        mapClickListenerRef.current.remove();
+        mapClickListenerRef.current = null;
+      }
+      if (markerDragListenerRef.current) {
+        markerDragListenerRef.current.remove();
+        markerDragListenerRef.current = null;
+      }
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+      }
+      mapInstanceRef.current = null;
+    };
+  }, [mapReady, handleMapClick, handleMarkerDragEnd]);
+
+  useEffect(() => {
+    if (!mapReady || currentStep !== 1 || !mapContainerRef.current) {
+      return;
+    }
+
+    const google = (window as any).google;
+    if (!google?.maps) {
+      setMapError('No se pudo inicializar Google Maps.');
+      return;
+    }
+
+    const map = new google.maps.Map(mapContainerRef.current, {
+      center: mapCenter,
+      zoom: markerPosition ? 16 : 12,
+      disableDefaultUI: true,
+      zoomControl: true,
+      gestureHandling: 'greedy',
+      minZoom: 4,
+    });
+
+    mapInstanceRef.current = map;
+
+    mapClickListenerRef.current = map.addListener('click', handleMapClick);
+
+    if (markerPosition) {
+      markerRef.current = new google.maps.Marker({
+        position: markerPosition,
+        map,
+        draggable: true,
+      });
+      markerDragListenerRef.current = markerRef.current.addListener('dragend', handleMarkerDragEnd);
+    }
+
+    return () => {
+      if (mapClickListenerRef.current) {
+        mapClickListenerRef.current.remove();
+        mapClickListenerRef.current = null;
+      }
+      if (markerDragListenerRef.current) {
+        markerDragListenerRef.current.remove();
+        markerDragListenerRef.current = null;
+      }
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+        markerRef.current = null;
+      }
+      mapInstanceRef.current = null;
+    };
+  }, [mapReady, currentStep, handleMapClick, handleMarkerDragEnd]);
+
+  useEffect(() => {
+    if (!mapReady || currentStep !== 1 || !mapInstanceRef.current) return;
+    const google = (window as any).google;
+    if (!google?.maps) return;
+
+    const map = mapInstanceRef.current;
+    map.panTo(mapCenter);
+
+    if (markerPosition) {
+      if (!markerRef.current) {
+        markerRef.current = new google.maps.Marker({
+          position: markerPosition,
+          map,
+          draggable: true,
+        });
+        markerDragListenerRef.current = markerRef.current.addListener('dragend', handleMarkerDragEnd);
+      } else {
+        markerRef.current.setPosition(markerPosition);
+        markerRef.current.setMap(map);
+      }
+      map.setZoom(16);
+    } else if (markerRef.current) {
+      if (markerDragListenerRef.current) {
+        markerDragListenerRef.current.remove();
+        markerDragListenerRef.current = null;
+      }
+      markerRef.current.setMap(null);
+      markerRef.current = null;
+      map.setZoom(12);
+    }
+  }, [mapReady, currentStep, mapCenter, markerPosition, handleMarkerDragEnd]);
+
+  const validateStep = (stepIndex: number): boolean => {
+    switch (stepIndex) {
+      case 0: {
+        if (!nombre.trim() || !email.trim() || !rutUsuario.trim()) {
+          addNotification('Completa todos los datos del usuario antes de continuar.', 'error');
+          return false;
+        }
+        if (isPasswordGuard) {
+          addNotification('Mejora la contraseña para poder continuar.', 'error');
+          return false;
+        }
+        return true;
+      }
+      case 1: {
+        if (!rut.trim() || !razonSocial.trim() || !direccion.trim() || !apiKey.trim()) {
+          addNotification('Completa los datos obligatorios de la ferretería.', 'error');
+          return false;
+        }
+        return true;
+      }
+      case 2: {
+        let hasAtLeastOneDay = false;
+        for (const dia of diasSemana) {
+          const { apertura, cierre } = horarioDias[dia];
+          if ((apertura && !cierre) || (!apertura && cierre)) {
+            addNotification(`Completa ambos horarios de ${dia} o déjalo vacío.`, 'error');
+            return false;
+          }
+          if (apertura && cierre) {
+            hasAtLeastOneDay = true;
+            if (apertura >= cierre) {
+              addNotification(`En ${dia} la hora de apertura debe ser menor que la de cierre.`, 'error');
+              return false;
+            }
+          }
+        }
+        if (!hasAtLeastOneDay) {
+          addNotification('Configura el horario de al menos un día.', 'error');
+          return false;
+        }
+        return true;
+      }
+      default:
+        return true;
+    }
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateStep(currentStep)) {
+      return;
+    }
+
+    if (!isLastStep) {
+      setCurrentStep((prev) => Math.min(STEPS.length - 1, prev + 1));
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) {
+        if (authError.message && authError.message.toLowerCase().includes('already registered')) {
+          addNotification('Este correo ya tiene una cuenta. Por favor, inicia sesión para registrar tu ferretería.', 'info');
+          navigate('/login');
+          return;
+        }
+        throw new Error(authError.message);
+      }
+
+      if (!authData.user) {
+        throw new Error('No se pudo obtener el usuario de Supabase Auth después del registro.');
+      }
+
+      const supabaseAuthId = authData.user.id;
+
+      const horarioJson: { [key: string]: string } = {};
+      diasSemana.forEach((dia) => {
+        const apertura = horarioDias[dia].apertura;
+        const cierre = horarioDias[dia].cierre;
+        if (apertura && cierre) {
+          horarioJson[dia] = `${apertura}-${cierre}`;
+        }
+      });
+
+      const registerDataToBackend = {
+        supabase_auth_id: supabaseAuthId,
+        nombre,
+        email,
+        password,
+        rut_usuario: rutUsuario,
+        rut,
+        razon_social: razonSocial,
+        direccion,
+        latitud: latitud === '' ? undefined : latitud,
+        longitud: longitud === '' ? undefined : longitud,
+        telefono: telefono === '' ? undefined : telefono,
+        api_key: apiKey,
+        descripcion: descripcion === '' ? undefined : descripcion,
+        horario: horarioJson,
+      };
+
+      const response = await fetch('http://localhost:5000/api/register-full', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registerDataToBackend),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al registrar usuario y ferretería en el backend.');
+      }
+
+      onRegisterSuccess();
+      addNotification('¡Registro exitoso! Ya puedes iniciar sesión.', 'success');
+    } catch (error: any) {
+      console.error('Error en el registro:', error);
+      addNotification(`Error de registro: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-container register-page">
+      <div className="register-wizard">
+        <div className="wizard-progress">
+          {STEPS.map((step, index) => {
+            const status =
+              index === currentStep ? 'is-active' : index < currentStep ? 'is-complete' : '';
+            return (
+              <div key={step.id} className={`progress-step ${status}`}>
+                <div className="progress-circle">{index + 1}</div>
+                <div className="progress-text">
+                  <span>{step.title}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <header className="wizard-step-header">
+          <h2>{currentStepConfig.title}</h2>
+          <p>{currentStepConfig.description}</p>
+        </header>
+
+        <form className="wizard-form" onSubmit={handleRegister}>
+          {currentStep === 0 && (
+            <section className="register-section wizard-section">
+              <header className="section-header">
+                <span className="section-tag">Paso 1</span>
+                <div>
+                  <h3>Credenciales principales</h3>
+                  <p>Introduce la información personal del administrador de la cuenta.</p>
+                </div>
+              </header>
+              <div className="section-body form-grid form-grid-two">
+                <div className="form-group">
+                  <label htmlFor="nombre">Nombre</label>
+                  <input
+                    id="nombre"
+                    type="text"
+                    placeholder="Tu nombre"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="email">Correo Electrónico</label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Tu correo electrónico"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group span-2">
+                  <label htmlFor="password">Contraseña</label>
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="Tu contraseña"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <div className="password-strength-feedback">
+                    <p className="strength-label">
+                      Fortaleza:{' '}
+                      <span className={`strength-${passwordStrength.strength.toLowerCase()}`}>
+                        {passwordStrength.strength}
+                      </span>
+                    </p>
+                    <ul>
+                      <li className={passwordStrength.isLongEnough ? 'fulfilled' : ''}>Al menos 8 caracteres</li>
+                      <li className={passwordStrength.hasUpperCase ? 'fulfilled' : ''}>Una letra mayúscula</li>
+                      <li className={passwordStrength.hasLowerCase ? 'fulfilled' : ''}>Una letra minúscula</li>
+                      <li className={passwordStrength.hasNumber ? 'fulfilled' : ''}>Un número</li>
+                      <li className={passwordStrength.hasSymbol ? 'fulfilled' : ''}>Un símbolo (!@#$...)</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="rutUsuario">RUT del Usuario</label>
+                  <input
+                    id="rutUsuario"
+                    type="text"
+                    placeholder="Ej: 12.345.678-9"
+                    value={rutUsuario}
+                    onChange={(e) => setRutUsuario(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {currentStep === 1 && (
+            <section className="register-section wizard-section">
+              <header className="section-header">
+                <span className="section-tag">Paso 2</span>
+                <div>
+                  <h3>Información de la ferretería</h3>
+                  <p>Cuéntanos sobre tu negocio y cómo podemos ubicarlo.</p>
+                </div>
+              </header>
+              <div className="section-body form-grid form-grid-two">
+                <div className="form-group">
+                  <label htmlFor="rut">RUT de la Ferretería</label>
+                  <input
+                    id="rut"
+                    type="text"
+                    placeholder="Ej: 12.345.678-9"
+                    value={rut}
+                    onChange={(e) => setRut(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="razonSocial">Razón Social</label>
+                  <input
+                    id="razonSocial"
+                    type="text"
+                    placeholder="Nombre de tu ferretería"
+                    value={razonSocial}
+                    onChange={(e) => setRazonSocial(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group span-2">
+                  <label htmlFor="direccion">Dirección</label>
+                  <input
+                    id="direccion"
+                    type="text"
+                    placeholder="Dirección de la ferretería"
+                    value={direccion}
+                    onChange={(e) => setDireccion(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group span-2">
+                  <label>Ubicación en el mapa</label>
+                  <div className="map-wrapper">
+                    <p className="map-instruction">
+                      Haz clic o arrastra el marcador para fijar la ubicación y rellenar latitud/longitud.
+                    </p>
+                    {mapError ? (
+                      <div className="map-loading map-error">{mapError}</div>
+                    ) : mapReady ? (
+                      <div ref={mapContainerRef} className="register-map" />
+                    ) : (
+                      <div className="map-loading">Cargando mapa...</div>
+                    )}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="latitud">Latitud </label>
+                  <input
+                    id="latitud"
+                    type="number"
+                    step="any"
+                    placeholder="Ej: -33.456789"
+                    value={latitud}
+                    onChange={(e) => setLatitud(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="longitud">Longitud </label>
+                  <input
+                    id="longitud"
+                    type="number"
+                    step="any"
+                    placeholder="Ej: -70.648274"
+                    value={longitud}
+                    onChange={(e) => setLongitud(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="telefono">Teléfono </label>
+                  <input
+                    id="telefono"
+                    type="tel"
+                    placeholder="Ej: +56 9 1234 5678"
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="apiKey">API Key</label>
+                  <input
+                    id="apiKey"
+                    type="text"
+                    placeholder="Clave única para tu ferretería"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group span-2">
+                  <label htmlFor="descripcion">Descripción (Opcional)</label>
+                  <textarea
+                    id="descripcion"
+                    placeholder="Breve descripción de la ferretería"
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {currentStep === 2 && (
+            <div className="wizard-columns">
+              <section className="register-section wizard-section">
+                <header className="section-header">
+                  <span className="section-tag">Paso 3</span>
+                  <div>
+                    <h3>Horarios de atención</h3>
+                    <p>Configura la disponibilidad semanal antes de finalizar el registro.</p>
+                  </div>
+                </header>
+                <div className="section-body">
+                  <div className="horario-grid">
+                    {diasSemana.map((dia) => (
+                      <div className="horario-item" key={dia}>
+                        <div className="horario-day">{dia.charAt(0).toUpperCase() + dia.slice(1)}</div>
+                        <div className="horario-inputs">
+                          <div className="horario-input">
+                            <span>Apertura</span>
+                            <input
+                              type="time"
+                              value={horarioDias[dia].apertura}
+                              onChange={(e) =>
+                                setHorarioDias((prev) => ({
+                                  ...prev,
+                                  [dia]: { ...prev[dia], apertura: e.target.value },
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="horario-input">
+                            <span>Cierre</span>
+                            <input
+                              type="time"
+                              value={horarioDias[dia].cierre}
+                              onChange={(e) =>
+                                setHorarioDias((prev) => ({
+                                  ...prev,
+                                  [dia]: { ...prev[dia], cierre: e.target.value },
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <aside className="wizard-summary">
+                <div className="sidebar-card highlight">
+                  <h4>Resumen del registro</h4>
+                  <p>Confirma que los datos sean correctos antes de finalizar.</p>
+                  <div className="summary-grid">
+                    <div>
+                      <span className="summary-label">Nombre</span>
+                      <span className="summary-value">{nombre || 'N/D'}</span>
+                    </div>
+                    <div>
+                      <span className="summary-label">Correo</span>
+                      <span className="summary-value">{email || 'N/D'}</span>
+                    </div>
+                    <div>
+                      <span className="summary-label">RUT Usuario</span>
+                      <span className="summary-value">{rutUsuario || 'N/D'}</span>
+                    </div>
+                    <div>
+                      <span className="summary-label">Ferretería</span>
+                      <span className="summary-value">{razonSocial || 'N/D'}</span>
+                    </div>
+                    <div>
+                      <span className="summary-label">RUT Ferretería</span>
+                      <span className="summary-value">{rut || 'N/D'}</span>
+                    </div>
+                    <div>
+                      <span className="summary-label">API Key</span>
+                      <span className="summary-value">{apiKeyPreview}</span>
+                    </div>
+                  </div>
+                  <div className={`strength-chip strength-${passwordStrength.strength.toLowerCase()}`}>
+                    Contraseña: {passwordStrength.strength}
+                  </div>
+                </div>
+
+                <div className="sidebar-card">
+                  <h4>Horario configurado</h4>
+                  {horarioPreview.length > 0 ? (
+                    <ul className="horario-preview">
+                      {horarioPreview.map(({ etiqueta, rango }) => (
+                        <li key={etiqueta}>
+                          <span>{etiqueta}</span>
+                          <strong>{rango}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="empty-state">Completa al menos un día para ver el resumen.</p>
+                  )}
+                  <small className="preview-hint">
+                    Puedes dejar días vacíos para marcarlos como cerrados.
+                  </small>
+                </div>
+              </aside>
+            </div>
+          )}
+
+          <div className="wizard-actions">
+            {currentStep > 0 && (
+              <button
+                type="button"
+                className="wizard-button secondary"
+                onClick={handlePrevStep}
+                disabled={loading}
+              >
+                Volver
+              </button>
+            )}
+            <button
+              type="submit"
+              className="wizard-button primary"
+              disabled={loading || (currentStep === 0 && isPasswordGuard)}
+            >
+              {isLastStep ? (loading ? 'Registrando...' : 'Finalizar registro') : 'Continuar'}
+            </button>
+          </div>
+        </form>
+
+        <div className="wizard-footer">
+          <p>
+            ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión aquí</Link>
+          </p>
+        </div>
+
+        <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
+      </div>
+    </div>
+  );
+};
+
+export default Registro;
