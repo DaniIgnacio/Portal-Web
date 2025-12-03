@@ -278,3 +278,11 @@
   content: '✔'; /* Checkmark verde */
   color: var(--color-success); 
 }
+
+/* Estilo para la instrucción del mapa */
+.map-instruction {
+  font-size: 0.9rem;
+  color: var(--color-text-dark);
+  margin-bottom: var(--spacing-sm);
+  text-align: left;
+}

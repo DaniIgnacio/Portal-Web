@@ -1,367 +1,407 @@
  // src/pages/Registro.tsx
-import React, { useState } from 'react';
-// La línea de SupabaseClient ya no es necesaria
-// import { supabase } from '../../supabaseClient';
-import { Link, useNavigate } from 'react-router-dom';
-import './AuthForm.css';
-import { useNotifications } from '../../hooks/useNotifications';
-import NotificationContainer from '../common/Notification';
-import usePasswordStrength from '../../hooks/usePasswordStrength'; // Importar el hook
-import { supabase } from '../../supabaseClient'; // Corregir la ruta de importación
-import { formatHorarioList } from '../../utils/horarioUtils';
-
-interface RegistroProps {
-  onRegisterSuccess: () => void;
-}
-
-const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
-  const [nombre, setNombre] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [rutUsuario, setRutUsuario] = useState<string>(''); // Nuevo estado para el RUT del usuario
-  const [rut, setRut] = useState<string>('');
-  const [razonSocial, setRazonSocial] = useState<string>('');
-  const [direccion, setDireccion] = useState<string>('');
-  const [latitud, setLatitud] = useState<string>('');
-  const [longitud, setLongitud] = useState<string>('');
-  const [telefono, setTelefono] = useState<string>('');
-  const [apiKey, setApiKey] = useState<string>('');
-  const [descripcion, setDescripcion] = useState<string>('');
-  // Nuevo estado para el horario por días
-  const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-  const [horarioDias, setHorarioDias] = useState<{ [key: string]: { apertura: string; cierre: string } }>(
-    diasSemana.reduce((acc, dia) => {
-      acc[dia] = { apertura: '', cierre: '' };
-      return acc;
-    }, {} as { [key: string]: { apertura: string; cierre: string } })
-  );
-  const [loading, setLoading] = useState<boolean>(false);
-  const navigate = useNavigate();
-  const { notifications, addNotification, dismissNotification } = useNotifications();
-  
-  const passwordStrength = usePasswordStrength(password); // Usar el hook
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    // Validar fortaleza mínima de la contraseña antes de enviar
-    if (passwordStrength.strength === 'Débil') {
-      addNotification('Tu contraseña es demasiado débil. Por favor, mejora su fortaleza.', 'error');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Paso 1: Registrar al usuario en Supabase Auth primero
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (authError) {
-        // Caso especial: el usuario ya existe en Supabase Auth
-        if (authError.message && authError.message.toLowerCase().includes('already registered')) {
-          addNotification('Este correo ya tiene una cuenta. Por favor, inicia sesión para registrar tu ferretería.', 'info');
-          navigate('/login');
-          return;
-        }
-        throw new Error(authError.message);
-      }
-
-      if (!authData.user) {
-        throw new Error('No se pudo obtener el usuario de Supabase Auth después del registro.');
-      }
-
-      const supabaseAuthId = authData.user.id; // Obtener el UUID del usuario de Supabase Auth
-
-      // Paso 2: Construir los datos para tu backend, incluyendo el ID de Supabase Auth
-      // Construir el objeto horario a partir de los inputs
-      let horarioJson: { [key: string]: string } = {};
-      diasSemana.forEach((dia) => {
-        const apertura = horarioDias[dia].apertura;
-        const cierre = horarioDias[dia].cierre;
-        if (apertura && cierre) {
-          horarioJson[dia] = `${apertura}-${cierre}`;
-        }
-      });
-
-      // Validar que al menos un día tenga horario
-      if (Object.keys(horarioJson).length === 0) {
-        addNotification('Debes ingresar el horario de al menos un día.', 'error');
-        setLoading(false);
-        return;
-      }
-
-      // Validar que para cada día, apertura < cierre (si ambos están provistos)
-      for (const dia of Object.keys(horarioJson)) {
-        const [apertura, cierre] = horarioJson[dia].split('-');
-        // Compare strings 'HH:MM' works for 24-hour format
-        if (apertura >= cierre) {
-          addNotification(`En ${dia} la hora de apertura debe ser menor que la de cierre.`, 'error');
-          setLoading(false);
-          return;
-        }
-      }
-
-      const registerDataToBackend = {
-        supabase_auth_id: supabaseAuthId, // ID de Supabase Auth
-        nombre,
-        email,
-        password,
-        rut_usuario: rutUsuario,
-        rut,
-        razon_social: razonSocial,
-        direccion,
-        latitud: latitud === '' ? undefined : latitud,
-        longitud: longitud === '' ? undefined : longitud,
-        telefono: telefono === '' ? undefined : telefono,
-        api_key: apiKey,
-        descripcion: descripcion === '' ? undefined : descripcion,
-        horario: horarioJson,
-      };
-
-      // Paso 3: Llamar a tu backend para guardar los detalles adicionales en public.usuario y ferreteria
-      const response = await fetch('http://localhost:5000/api/register-full', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registerDataToBackend),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al registrar usuario y ferretería en el backend.');
-      }
-
-      // Llama a la nueva función onRegisterSuccess para actualizar el estado en App.tsx
-      onRegisterSuccess();
-      
-      addNotification('¡Registro exitoso! Ya puedes iniciar sesión.', 'success');
-      // navigate('/login'); // Ya no navegamos aquí
-    } catch (error: any) {
-      console.error('Error en el registro:', error);
-      addNotification(`Error de registro: ${error.message}`, 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="auth-container">
-      <div className="auth-card register"> {/* Añadir clase 'register' aquí */}
-        <div className="auth-header">
-          <h2>Crea tu Cuenta</h2>
-          <p>Ingresa tus datos para registrarte y tu ferretería.</p>
-        </div>
-        <form className="auth-form" onSubmit={handleRegister}>
-          <div className="register-grid"> {/* Contenedor para las dos columnas */}
-            <div className="grid-column"> {/* Columna para datos de usuario */}
-              <h3>Datos de Usuario</h3>
-              <div className="form-group">
-                <label htmlFor="nombre">Nombre</label>
-                <input
-                  id="nombre"
-                  type="text"
-                  placeholder="Tu nombre"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="email">Correo Electrónico</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="Tu correo electrónico"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">Contraseña</label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Tu contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <div className="password-strength-feedback"> {/* Contenedor para el feedback de la contraseña */}
-                  <p className="strength-label">Fortaleza: <span className={`strength-${passwordStrength.strength.toLowerCase()}`}>{passwordStrength.strength}</span></p>
-                  <ul>
-                    <li className={passwordStrength.isLongEnough ? 'fulfilled' : ''}>Al menos 8 caracteres</li>
-                    <li className={passwordStrength.hasUpperCase ? 'fulfilled' : ''}>Una letra mayúscula</li>
-                    <li className={passwordStrength.hasLowerCase ? 'fulfilled' : ''}>Una letra minúscula</li>
-                    <li className={passwordStrength.hasNumber ? 'fulfilled' : ''}>Un número</li>
-                    <li className={passwordStrength.hasSymbol ? 'fulfilled' : ''}>Un símbolo (!@#$...)</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="form-group"> {/* Nuevo campo para RUT del usuario */}
-                <label htmlFor="rutUsuario">RUT del Usuario</label>
-                <input
-                  id="rutUsuario"
-                  type="text"
-                  placeholder="Ej: 12.345.678-9"
-                  value={rutUsuario}
-                  onChange={(e) => setRutUsuario(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid-column"> {/* Columna para datos de ferretería */}
-              <h3>Datos de la Ferretería</h3>
-              <div className="form-group">
-                <label htmlFor="rut">RUT de la Ferretería</label>
-                <input
-                  id="rut"
-                  type="text"
-                  placeholder="Ej: 12.345.678-9"
-                  value={rut}
-                  onChange={(e) => setRut(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="razonSocial">Razón Social</label>
-                <input
-                  id="razonSocial"
-                  type="text"
-                  placeholder="Nombre de tu ferretería"
-                  value={razonSocial}
-                  onChange={(e) => setRazonSocial(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="direccion">Dirección</label>
-                <input
-                  id="direccion"
-                  type="text"
-                  placeholder="Dirección de la ferretería"
-                  value={direccion}
-                  onChange={(e) => setDireccion(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="latitud">Latitud (Opcional)</label>
-                  <input
-                    id="latitud"
-                    type="number"
-                    step="any"
-                    placeholder="Ej: -33.456789"
-                    value={latitud}
-                    onChange={(e) => setLatitud(e.target.value)}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="longitud">Longitud (Opcional)</label>
-                  <input
-                    id="longitud"
-                    type="number"
-                    step="any"
-                    placeholder="Ej: -70.648274"
-                    value={longitud}
-                    onChange={(e) => setLongitud(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="telefono">Teléfono (Opcional)</label>
-                <input
-                  id="telefono"
-                  type="tel"
-                  placeholder="Ej: +56 9 1234 5678"
-                  value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="apiKey">API Key</label>
-                <input
-                  id="apiKey"
-                  type="text"
-                  placeholder="Clave única para tu ferretería"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="descripcion">Descripción (Opcional)</label>
-                <textarea
-                  id="descripcion"
-                  placeholder="Breve descripción de la ferretería"
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  rows={2}
-                />
-              </div>
-              <div className="form-group">
-                <label>Horario de Atención</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {diasSemana.map((dia) => (
-                    <div key={dia} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ width: 90 }}>{dia.charAt(0).toUpperCase() + dia.slice(1)}:</span>
-                      <input
-                        type="time"
-                        value={horarioDias[dia].apertura}
-                        onChange={e => setHorarioDias(prev => ({ ...prev, [dia]: { ...prev[dia], apertura: e.target.value } }))}
-                        style={{ width: 100 }}
-                        placeholder="Apertura"
-                      />
-                      <span>-</span>
-                      <input
-                        type="time"
-                        value={horarioDias[dia].cierre}
-                        onChange={e => setHorarioDias(prev => ({ ...prev, [dia]: { ...prev[dia], cierre: e.target.value } }))}
-                        style={{ width: 100 }}
-                        placeholder="Cierre"
-                      />
-                    </div>
-                  ))}
-                </div>
-                {/* Vista previa del horario */}
-                {Object.values(horarioDias).some(h => h.apertura && h.cierre) && (
-                  <ul style={{padding:0, listStyle:'none', marginTop:8}}>
-                    {diasSemana.map(dia => {
-                      const apertura = horarioDias[dia].apertura;
-                      const cierre = horarioDias[dia].cierre;
-                      if (apertura && cierre) {
-                        return <li key={dia}><strong>{dia.charAt(0).toUpperCase() + dia.slice(1)}:</strong> {apertura}-{cierre}</li>;
-                      }
-                      return null;
-                    })}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
-          <button 
-            type="submit" 
-            className="auth-button" 
-            disabled={loading || password.length === 0 || passwordStrength.strength === 'Débil' || !passwordStrength.isLongEnough}
-          >
-            {loading ? 'Registrando...' : 'Registrarse'}
-          </button>
-        </form>
-        <div className="auth-footer">
-          <p>
-            ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión aquí</Link>
-          </p>
-        </div>
-      </div>
-      <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
-    </div>
-  );
-};
-
-export default Registro;
+ import React, { useState, useCallback, useMemo } from 'react';
+ import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+ // La línea de SupabaseClient ya no es necesaria
+ // import { supabase } from '../../supabaseClient';
+ import { Link, useNavigate } from 'react-router-dom';
+ import './AuthForm.css';
+ import { useNotifications } from '../../hooks/useNotifications';
+ import NotificationContainer from '../common/Notification';
+ import usePasswordStrength from '../../hooks/usePasswordStrength'; // Importar el hook
+ import { supabase } from '../../supabaseClient'; // Corregir la ruta de importación
+ import { formatHorarioList } from '../../utils/horarioUtils';
+ 
+ interface RegistroProps {
+   onRegisterSuccess: () => void;
+ }
+ 
+ // --- CONFIGURACIÓN DE GOOGLE MAPS ---
+ const MAP_LIBRARIES = ['places'];
+ const mapContainerStyle = {
+   width: '100%',
+   height: '300px',
+   borderRadius: '8px',
+ };
+ // Coordenadas centradas en la Región de Ñuble (Chillán)
+ const defaultCenter = {
+   lat: -36.606,
+   lng: -72.102
+ }; const mapOptions = {
+   disableDefaultUI: true,
+   zoomControl: true,
+ };
+ // --- FIN DE CONFIGURACIÓN ---
+ 
+ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
+   const [nombre, setNombre] = useState<string>('');
+   const [email, setEmail] = useState<string>('');
+   const [password, setPassword] = useState<string>('');
+   const [rutUsuario, setRutUsuario] = useState<string>(''); // Nuevo estado para el RUT del usuario
+   const [rut, setRut] = useState<string>('');
+   const [razonSocial, setRazonSocial] = useState<string>('');
+   const [direccion, setDireccion] = useState<string>('');
+   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
+   const [telefono, setTelefono] = useState<string>('');
+   const [apiKey, setApiKey] = useState<string>('');
+   const [descripcion, setDescripcion] = useState<string>('');
+   // Nuevo estado para el horario por días
+   const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+   const [horarioDias, setHorarioDias] = useState<{ [key: string]: { apertura: string; cierre: string } }>(
+     diasSemana.reduce((acc, dia) => {
+       acc[dia] = { apertura: '', cierre: '' };
+       return acc;
+     }, {} as { [key: string]: { apertura: string; cierre: string } })
+   );
+   const [loading, setLoading] = useState<boolean>(false);
+   const navigate = useNavigate();
+   const { notifications, addNotification, dismissNotification } = useNotifications();
+   
+   const passwordStrength = usePasswordStrength(password); // Usar el hook
+ 
+   // Cargar el script de Google Maps
+   const { isLoaded, loadError } = useJsApiLoader({
+     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "",
+     libraries: MAP_LIBRARIES as any, // Type assertion due to library typing issue
+   });
+ 
+   const onMapClick = useCallback((event: google.maps.MapMouseEvent) => {
+     if (event.latLng) {
+       setMarkerPosition({
+         lat: event.latLng.lat(),
+         lng: event.latLng.lng(),
+       });
+     }
+   }, []);
+ 
+   const handleRegister = async (e: React.FormEvent) => {
+     e.preventDefault();
+     setLoading(true);
+ 
+     // Validar que se ha seleccionado una ubicación en el mapa
+     if (!markerPosition) {
+       addNotification('Por favor, selecciona la ubicación de la ferretería en el mapa.', 'error');
+       setLoading(false);
+       return;
+     }
+ 
+     // Validar fortaleza mínima de la contraseña antes de enviar
+     if (passwordStrength.strength === 'Débil') {
+       addNotification('Tu contraseña es demasiado débil. Por favor, mejora su fortaleza.', 'error');
+       setLoading(false);
+       return;
+     }
+ 
+     try {
+       // Paso 1: Registrar al usuario en Supabase Auth primero
+       const { data: authData, error: authError } = await supabase.auth.signUp({
+         email,
+         password,
+       });
+ 
+       if (authError) {
+         // Caso especial: el usuario ya existe en Supabase Auth
+         if (authError.message && authError.message.toLowerCase().includes('already registered')) {
+           addNotification('Este correo ya tiene una cuenta. Por favor, inicia sesión para registrar tu ferretería.', 'info');
+           navigate('/login');
+           return;
+         }
+         throw new Error(authError.message);
+       }
+ 
+       if (!authData.user) {
+         throw new Error('No se pudo obtener el usuario de Supabase Auth después del registro.');
+       }
+ 
+       const supabaseAuthId = authData.user.id; // Obtener el UUID del usuario de Supabase Auth
+ 
+       // Paso 2: Construir los datos para tu backend, incluyendo el ID de Supabase Auth
+       // Construir el objeto horario a partir de los inputs
+       let horarioJson: { [key: string]: string } = {};
+       diasSemana.forEach((dia) => {
+         const apertura = horarioDias[dia].apertura;
+         const cierre = horarioDias[dia].cierre;
+         if (apertura && cierre) {
+           horarioJson[dia] = `${apertura}-${cierre}`;
+         }
+       });
+ 
+       // Validar que al menos un día tenga horario
+       if (Object.keys(horarioJson).length === 0) {
+         addNotification('Debes ingresar el horario de al menos un día.', 'error');
+         setLoading(false);
+         return;
+       }
+ 
+       // Validar que para cada día, apertura < cierre (si ambos están provistos)
+       for (const dia of Object.keys(horarioJson)) {
+         const [apertura, cierre] = horarioJson[dia].split('-');
+         // Compare strings 'HH:MM' works for 24-hour format
+         if (apertura >= cierre) {
+           addNotification(`En ${dia} la hora de apertura debe ser menor que la de cierre.`, 'error');
+           setLoading(false);
+           return;
+         }
+       }
+ 
+       const registerDataToBackend = {
+         supabase_auth_id: supabaseAuthId, // ID de Supabase Auth
+         nombre,
+         email,
+         password,
+         rut_usuario: rutUsuario,
+         rut,
+         razon_social: razonSocial,
+         direccion,
+         latitud: markerPosition.lat, // Usar latitud del marcador
+         longitud: markerPosition.lng, // Usar longitud del marcador
+         telefono: telefono === '' ? undefined : telefono,
+         api_key: apiKey,
+         descripcion: descripcion === '' ? undefined : descripcion,
+         horario: horarioJson,
+       };
+ 
+       // Paso 3: Llamar a tu backend para guardar los detalles adicionales en public.usuario y ferreteria
+       const response = await fetch('http://localhost:5000/api/register-full', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify(registerDataToBackend),
+       });
+ 
+       const data = await response.json();
+ 
+       if (!response.ok) {
+         throw new Error(data.error || 'Error al registrar usuario y ferretería en el backend.');
+       }
+ 
+       // Llama a la nueva función onRegisterSuccess para actualizar el estado en App.tsx
+       onRegisterSuccess();
+       
+       addNotification('¡Registro exitoso! Ya puedes iniciar sesión.', 'success');
+       // navigate('/login'); // Ya no navegamos aquí
+     } catch (error: any) {
+       console.error('Error en el registro:', error);
+       addNotification(`Error de registro: ${error.message}`, 'error');
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   if (loadError) return <div>Error al cargar el mapa. Por favor, revisa la configuración de la API Key.</div>;
+   
+   return (
+     <div className="auth-container">
+       <div className="auth-card register"> {/* Añadir clase 'register' aquí */}
+         <div className="auth-header">
+           <h2>Crea tu Cuenta</h2>
+           <p>Ingresa tus datos para registrarte y tu ferretería.</p>
+         </div>
+         <form className="auth-form" onSubmit={handleRegister}>
+           <div className="register-grid"> {/* Contenedor para las dos columnas */}
+             <div className="grid-column"> {/* Columna para datos de usuario */}
+               <h3>Datos de Usuario</h3>
+               <div className="form-group">
+                 <label htmlFor="nombre">Nombre</label>
+                 <input
+                   id="nombre"
+                   type="text"
+                   placeholder="Tu nombre"
+                   value={nombre}
+                   onChange={(e) => setNombre(e.target.value)}
+                   required
+                 />
+               </div>
+               <div className="form-group">
+                 <label htmlFor="email">Correo Electrónico</label>
+                 <input
+                   id="email"
+                   type="email"
+                   placeholder="Tu correo electrónico"
+                   value={email}
+                   onChange={(e) => setEmail(e.target.value)}
+                   required
+                 />
+               </div>
+               <div className="form-group">
+                 <label htmlFor="password">Contraseña</label>
+                 <input
+                   id="password"
+                   type="password"
+                   placeholder="Tu contraseña"
+                   value={password}
+                   onChange={(e) => setPassword(e.target.value)}
+                   required
+                 />
+                 <div className="password-strength-feedback"> {/* Contenedor para el feedback de la contraseña */}
+                   <p className="strength-label">Fortaleza: <span className={`strength-${passwordStrength.strength.toLowerCase()}`}>{passwordStrength.strength}</span></p>
+                   <ul>
+                     <li className={passwordStrength.isLongEnough ? 'fulfilled' : ''}>Al menos 8 caracteres</li>
+                     <li className={passwordStrength.hasUpperCase ? 'fulfilled' : ''}>Una letra mayúscula</li>
+                     <li className={passwordStrength.hasLowerCase ? 'fulfilled' : ''}>Una letra minúscula</li>
+                     <li className={passwordStrength.hasNumber ? 'fulfilled' : ''}>Un número</li>
+                     <li className={passwordStrength.hasSymbol ? 'fulfilled' : ''}>Un símbolo (!@#$...)</li>
+                   </ul>
+                 </div>
+               </div>
+               <div className="form-group"> {/* Nuevo campo para RUT del usuario */}
+                 <label htmlFor="rutUsuario">RUT del Usuario</label>
+                 <input
+                   id="rutUsuario"
+                   type="text"
+                   placeholder="Ej: 12.345.678-9"
+                   value={rutUsuario}
+                   onChange={(e) => setRutUsuario(e.target.value)}
+                   required
+                 />
+               </div>
+             </div>
+ 
+             <div className="grid-column"> {/* Columna para datos de ferretería */}
+               <h3>Datos de la Ferretería</h3>
+               <div className="form-group">
+                 <label htmlFor="rut">RUT de la Ferretería</label>
+                 <input
+                   id="rut"
+                   type="text"
+                   placeholder="Ej: 12.345.678-9"
+                   value={rut}
+                   onChange={(e) => setRut(e.target.value)}
+                   required
+                 />
+               </div>
+               <div className="form-group">
+                 <label htmlFor="razonSocial">Razón Social</label>
+                 <input
+                   id="razonSocial"
+                   type="text"
+                   placeholder="Nombre de tu ferretería"
+                   value={razonSocial}
+                   onChange={(e) => setRazonSocial(e.target.value)}
+                   required
+                 />
+               </div>
+               <div className="form-group">
+                 <label htmlFor="direccion">Dirección</label>
+                 <input
+                   id="direccion"
+                   type="text"
+                   placeholder="Dirección de la ferretería"
+                   value={direccion}
+                   onChange={(e) => setDireccion(e.target.value)}
+                   required
+                 />
+               </div>
+               
+               {/* --- INICIO DEL MAPA --- */}
+               <div className="form-group">
+                 <label>Ubicación en el Mapa</label>
+                 <p className="map-instruction">Haz clic en el mapa para colocar el marcador en la ubicación de tu ferretería.</p>
+                 {!isLoaded ? (
+                   <div>Cargando mapa...</div>
+                 ) : (
+                   <GoogleMap
+                     mapContainerStyle={mapContainerStyle}
+                     center={defaultCenter}
+                     zoom={12}
+                     options={mapOptions}
+                     onClick={onMapClick}
+                   >
+                     {markerPosition && <MarkerF position={markerPosition} />}
+                   </GoogleMap>
+                 )}
+               </div>
+               {/* --- FIN DEL MAPA --- */}
+ 
+               <div className="form-group">
+                 <label htmlFor="telefono">Teléfono (Opcional)</label>
+                 <input
+                   id="telefono"
+                   type="tel"
+                   placeholder="Ej: +56 9 1234 5678"
+                   value={telefono}
+                   onChange={(e) => setTelefono(e.target.value)}
+                 />
+               </div>
+               <div className="form-group">
+                 <label htmlFor="apiKey">API Key</label>
+                 <input
+                   id="apiKey"
+                   type="text"
+                   placeholder="Clave única para tu ferretería"
+                   value={apiKey}
+                   onChange={(e) => setApiKey(e.target.value)}
+                   required
+                 />
+               </div>
+               <div className="form-group">
+                 <label htmlFor="descripcion">Descripción (Opcional)</label>
+                 <textarea
+                   id="descripcion"
+                   placeholder="Breve descripción de la ferretería"
+                   value={descripcion}
+                   onChange={(e) => setDescripcion(e.target.value)}
+                   rows={2}
+                 />
+               </div>
+               <div className="form-group">
+                 <label>Horario de Atención</label>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                   {diasSemana.map((dia) => (
+                     <div key={dia} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                       <span style={{ width: 90 }}>{dia.charAt(0).toUpperCase() + dia.slice(1)}:</span>
+                       <input
+                         type="time"
+                         value={horarioDias[dia].apertura}
+                         onChange={e => setHorarioDias(prev => ({ ...prev, [dia]: { ...prev[dia], apertura: e.target.value } }))}
+                         style={{ width: 100 }}
+                         placeholder="Apertura"
+                       />
+                       <span>-</span>
+                       <input
+                         type="time"
+                         value={horarioDias[dia].cierre}
+                         onChange={e => setHorarioDias(prev => ({ ...prev, [dia]: { ...prev[dia], cierre: e.target.value } }))}
+                         style={{ width: 100 }}
+                         placeholder="Cierre"
+                       />
+                     </div>
+                   ))}
+                 </div>
+                 {/* Vista previa del horario */}
+                 {Object.values(horarioDias).some(h => h.apertura && h.cierre) && (
+                   <ul style={{padding:0, listStyle:'none', marginTop:8}}>
+                     {diasSemana.map(dia => {
+                       const apertura = horarioDias[dia].apertura;
+                       const cierre = horarioDias[dia].cierre;
+                       if (apertura && cierre) {
+                         return <li key={dia}><strong>{dia.charAt(0).toUpperCase() + dia.slice(1)}:</strong> {apertura}-{cierre}</li>;
+                       }
+                       return null;
+                     })}
+                   </ul>
+                 )}
+               </div>
+             </div>
+           </div>
+           <button 
+             type="submit" 
+             className="auth-button" 
+             disabled={loading || password.length === 0 || passwordStrength.strength === 'Débil' || !passwordStrength.isLongEnough}
+           >
+             {loading ? 'Registrando...' : 'Registrarse'}
+           </button>
+         </form>
+         <div className="auth-footer">
+           <p>
+             ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión aquí</Link>
+           </p>
+         </div>
+       </div>
+       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
+     </div>
+   );
+ };
+ 
+ export default Registro;
+ 
