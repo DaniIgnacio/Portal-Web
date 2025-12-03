@@ -7,6 +7,10 @@ const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey'; // Clave para tokens emitidos por tu backend
 const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET || JWT_SECRET; // Clave para verificar tokens de Supabase
 
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+console.log('Supabase URL:', process.env.SUPABASE_URL);
+console.log('Supabase service key length:', process.env.SUPABASE_SERVICE_KEY?.length ?? 0);
+
 console.log('Backend JWT_SECRET cargado:', JWT_SECRET);
 console.log('Backend SUPABASE_JWT_SECRET cargado:', SUPABASE_JWT_SECRET);
 

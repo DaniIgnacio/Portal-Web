@@ -17,10 +17,15 @@ interface Cliente {
   longitud?: number;
 }
 
+type ClienteListado = Pick<
+  Cliente,
+  'id_cliente' | 'auth_user_id' | 'nombre' | 'email' | 'telefono' | 'rut' | 'fecha_registro'
+>;
+
 const API_URL = 'http://localhost:5000/api';
 
 const ClientesPage: React.FC = () => {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientes, setClientes] = useState<ClienteListado[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { addNotification } = useNotifications();
 
@@ -31,14 +36,50 @@ const ClientesPage: React.FC = () => {
         const token = localStorage.getItem('token');
         const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
         const res = await fetch(`${API_URL}/clientes`, { headers });
-        if (!res.ok) {
-          addNotification('Error al cargar clientes', 'error');
+
+        if (res.status === 401) {
+          addNotification('Tu sesión ha expirado. Por favor inicia sesión nuevamente.', 'error');
           setClientes([]);
           setIsLoading(false);
           return;
         }
+
+        if (res.status === 403) {
+          addNotification('No tienes permisos para ver el listado de clientes.', 'error');
+          setClientes([]);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!res.ok) {
+          const serverMessage = await res.text();
+          addNotification(serverMessage || 'Error al cargar clientes', 'error');
+          setClientes([]);
+          setIsLoading(false);
+          return;
+        }
+
         const data = await res.json();
-        setClientes(Array.isArray(data) ? data : []);
+        console.log('Respuesta clientes', data);
+        if (!Array.isArray(data)) {
+          setClientes([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const sanitizados: ClienteListado[] = data.map(
+          ({ id_cliente, auth_user_id, nombre, email, telefono, rut, fecha_registro }: Cliente) => ({
+            id_cliente,
+            auth_user_id,
+            nombre,
+            email,
+            telefono,
+            rut,
+            fecha_registro,
+          })
+        );
+
+        setClientes(sanitizados);
       } catch (err) {
         addNotification('Error de red al cargar clientes', 'error');
         setClientes([]);
@@ -67,12 +108,7 @@ const ClientesPage: React.FC = () => {
                 <th>Email</th>
                 <th>Teléfono</th>
                 <th>RUT</th>
-                <th>Dirección</th>
                 <th>Fecha Registro</th>
-                <th>Tipo Combustible</th>
-                <th>Rendimiento km/l</th>
-                <th>Latitud</th>
-                <th>Longitud</th>
               </tr>
             </thead>
             <tbody>
@@ -84,12 +120,7 @@ const ClientesPage: React.FC = () => {
                   <td>{c.email}</td>
                   <td>{c.telefono}</td>
                   <td>{c.rut}</td>
-                  <td>{c.direccion}</td>
                   <td>{new Date(c.fecha_registro).toLocaleString()}</td>
-                  <td>{c.tipo_combustible}</td>
-                  <td>{c.rendimiento_km_l}</td>
-                  <td>{c.latitud ?? '-'}</td>
-                  <td>{c.longitud ?? '-'}</td>
                 </tr>
               ))}
             </tbody>

@@ -34,10 +34,12 @@ const verifyToken = (req: any, res: any, next: any) => {
 
 const router = Router();
 
+// Roles que pueden administrar clientes
+const ROLES_ADMIN = new Set(['admin', 'super_admin', 'superadmin', 'super admin']);
+
 // GET: Obtener todos los clientes de la tabla cliente_app
 router.get('/clientes', verifyToken, async (req: any, res: any) => {
   try {
-    // Solo administradores pueden acceder a esta ruta: verificamos rol en la tabla usuario
     const id_usuario = req.user?.id_usuario;
     const { data: userData, error: userError } = await supabase
       .from('usuario')
@@ -45,9 +47,16 @@ router.get('/clientes', verifyToken, async (req: any, res: any) => {
       .eq('id_usuario', id_usuario)
       .single();
 
-    if (userError || !userData || userData.rol !== 'admin') {
-      return res.status(403).json({ error: 'No autorizado. Requiere rol admin.' });
+    if (userError) {
+      console.error('Error al verificar rol de usuario:', userError);
+      return res.status(500).json({ error: 'No se pudo verificar el rol del usuario.' });
     }
+
+    if (!userData || !ROLES_ADMIN.has((userData.rol || '').toLowerCase())) {
+      console.warn('Acceso denegado a /clientes', { id_usuario, rol: userData?.rol });
+      return res.status(403).json({ error: 'No autorizado. Requiere rol administrativo.' });
+    }
+
     const { data, error } = await supabase
       .from('cliente_app')
       .select('*')
@@ -57,7 +66,22 @@ router.get('/clientes', verifyToken, async (req: any, res: any) => {
       console.error('Error de Supabase al obtener clientes:', error);
       return res.status(500).json({ error: error.message });
     }
-    res.json(data);
+
+    console.log('Datos crudos cliente_app', data);
+
+    const sanitized = (data ?? []).map((c: any) => ({
+      id_cliente: c.id_cliente,
+      auth_user_id: c.auth_user_id,
+      nombre: c.nombre,
+      email: c.email,
+      telefono: c.telefono,
+      rut: c.rut,
+      fecha_registro: c.fecha_registro,
+    }));
+
+    console.log('Clientes obtenidos', { count: sanitized.length });
+
+    res.json(sanitized);
   } catch (error) {
     console.error('Error interno al obtener clientes:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

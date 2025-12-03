@@ -145,3 +145,64 @@
 .horario-list li {
   margin: 2px 0;
 }
+
+.ferreteria-info textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-accent-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
+  color: var(--color-text-dark);
+  background-color: var(--color-white);
+  box-sizing: border-box;
+}
+
+.horario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.horario-item {
+  background-color: var(--color-background-light);
+  border: 1px solid var(--color-accent-medium);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.horario-day {
+  font-weight: 600;
+  color: var(--color-primary-darkest);
+  margin-bottom: var(--spacing-sm);
+}
+
+.horario-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.horario-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--color-text-soft);
+}
+
+.horario-input input[type="time"] {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-accent-medium);
+  font-size: 0.95rem;
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+}
+
+.horario-input input[type="time"]:focus {
+  border-color: var(--color-secondary-dark);
+  box-shadow: 0 0 0 2px rgba(51, 51, 51, 0.15);
+  outline: none;
+}

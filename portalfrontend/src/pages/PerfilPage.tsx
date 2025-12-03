@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatHorarioList, formatHorarioSummary } from '../utils/horarioUtils';
 import './PerfilPage.css';
 import { useNotifications } from '../hooks/useNotifications';
@@ -24,6 +24,16 @@ interface FerreteriaData {
   horario?: any;
 }
 
+type HorarioState = { [key: string]: { apertura: string; cierre: string } };
+
+const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+const createEmptyHorario = (): HorarioState =>
+  diasSemana.reduce((acc, dia) => {
+    acc[dia] = { apertura: '', cierre: '' };
+    return acc;
+  }, {} as HorarioState);
+
 const PerfilPage: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [ferreteriaData, setFerreteriaData] = useState<FerreteriaData | null>(null);
@@ -32,9 +42,81 @@ const PerfilPage: React.FC = () => {
   const [isEditingFerreteria, setIsEditingFerreteria] = useState<boolean>(false);
   const [editedUser, setEditedUser] = useState<Partial<UserData>>({});
   const [editedFerreteria, setEditedFerreteria] = useState<Partial<FerreteriaData>>({});
+  const [editedHorario, setEditedHorario] = useState<HorarioState>(() => createEmptyHorario());
+  const [stats, setStats] = useState({ totalProducts: 0, lowStockProducts: 0, activeOrders: 0 });
   const { addNotification } = useNotifications();
 
   const API_URL = 'http://localhost:5000/api';
+
+  const normalizeHorario = useCallback((horario: any): HorarioState => {
+    const base = createEmptyHorario();
+    if (!horario) {
+      return base;
+    }
+
+    let parsed = horario;
+    if (typeof horario === 'string') {
+      try {
+        parsed = JSON.parse(horario);
+      } catch (err) {
+        return base;
+      }
+    }
+
+    if (typeof parsed !== 'object' || parsed === null) {
+      return base;
+    }
+
+    diasSemana.forEach((dia) => {
+      const value = parsed[dia];
+      if (!value) return;
+      if (typeof value === 'string') {
+        const [apertura = '', cierre = ''] = value.split('-');
+        base[dia] = { apertura, cierre };
+      } else if (typeof value === 'object') {
+        base[dia] = {
+          apertura: value.apertura ?? '',
+          cierre: value.cierre ?? '',
+        };
+      }
+    });
+
+    return base;
+  }, []);
+
+  const fetchStats = useCallback(async (token: string) => {
+    try {
+      const headers: HeadersInit = { Authorization: `Bearer ${token}` };
+      const [productsRes, ordersRes] = await Promise.all([
+        fetch(`${API_URL}/productos`, { headers }),
+        fetch(`${API_URL}/pedidos`, { headers }),
+      ]);
+
+      let totalProducts = 0;
+      let lowStockProducts = 0;
+      if (productsRes.ok) {
+        const products = (await productsRes.json()) as any[];
+        totalProducts = products.length;
+        lowStockProducts = products.filter((p) => Number(p?.stock) <= 5).length;
+      } else if (productsRes.status === 401 || productsRes.status === 403) {
+        addNotification('Debes iniciar sesión nuevamente para cargar los productos.', 'error');
+      }
+
+      let activeOrders = 0;
+      if (ordersRes.ok) {
+        const orders = (await ordersRes.json()) as any[];
+        activeOrders = orders.filter((pedido) => {
+          const estado = String(pedido?.estado || '').toLowerCase();
+          return estado && estado !== 'completado' && estado !== 'cancelado';
+        }).length;
+      }
+
+      setStats({ totalProducts, lowStockProducts, activeOrders });
+    } catch (error) {
+      console.error('Error al cargar estadísticas:', error);
+      addNotification('No se pudieron cargar las estadísticas de la ferretería.', 'error');
+    }
+  }, [API_URL, addNotification]);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -63,6 +145,8 @@ const PerfilPage: React.FC = () => {
             const ferreteriaDetails: FerreteriaData = await ferreteriaResponse.json();
             setFerreteriaData(ferreteriaDetails);
             setEditedFerreteria(ferreteriaDetails);
+            setEditedHorario(normalizeHorario(ferreteriaDetails.horario));
+            await fetchStats(token);
           } else {
             addNotification('Error al cargar los datos de la ferretería.', 'error');
           }
@@ -77,7 +161,7 @@ const PerfilPage: React.FC = () => {
     };
 
     fetchProfileData();
-  }, [addNotification]);
+  }, [API_URL, addNotification, fetchStats, normalizeHorario]);
 
   const handleUserChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -87,6 +171,16 @@ const PerfilPage: React.FC = () => {
   const handleFerreteriaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditedFerreteria(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleHorarioChange = (dia: string, field: 'apertura' | 'cierre', value: string) => {
+    setEditedHorario(prev => ({
+      ...prev,
+      [dia]: {
+        ...prev[dia],
+        [field]: value,
+      },
+    }));
   };
 
   const handleFerreteriaTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -133,18 +227,15 @@ const PerfilPage: React.FC = () => {
     if (!ferreteriaData) return;
     setIsLoading(true);
     try {
-      // Prepare payload: if horario is a valid JSON string, parse it
       const payload: any = { ...editedFerreteria };
-      if (payload.horario && typeof payload.horario === 'string') {
-        try {
-          payload.horario = JSON.parse(payload.horario);
-        } catch (err) {
-          // If parsing fails, keep as string (backend may accept), but warn
-          addNotification('Formato de horario inválido. Debe ser JSON.', 'error');
-          setIsLoading(false);
-          return;
+      const horarioPayload: Record<string, string> = diasSemana.reduce((acc, dia) => {
+        const { apertura, cierre } = editedHorario[dia] || { apertura: '', cierre: '' };
+        if (apertura && cierre) {
+          acc[dia] = `${apertura}-${cierre}`;
         }
-      }
+        return acc;
+      }, {} as Record<string, string>);
+      payload.horario = Object.keys(horarioPayload).length > 0 ? horarioPayload : null;
 
       const response = await fetch(`${API_URL}/ferreterias/${ferreteriaData.id_ferreteria}`, {
         method: 'PUT',
@@ -157,8 +248,14 @@ const PerfilPage: React.FC = () => {
         throw new Error(data.error || 'Error al actualizar ferretería');
       }
 
-      setFerreteriaData(prev => prev ? { ...prev, ...data } : null);
-      // No actualizamos localStorage con ferreteria completa si no se guarda ahí
+      const updated = Array.isArray(data) ? data[0] : data;
+      setFerreteriaData(prev => prev ? { ...prev, ...updated } : updated);
+      setEditedFerreteria(updated);
+      setEditedHorario(normalizeHorario(updated?.horario));
+      const token = localStorage.getItem('token');
+      if (token) {
+        await fetchStats(token);
+      }
       addNotification('Ferretería actualizada exitosamente.', 'success');
       setIsEditingFerreteria(false);
     } catch (error: any) {
@@ -227,7 +324,18 @@ const PerfilPage: React.FC = () => {
             <div className="card-header">
               <h3>Información de la Ferretería</h3>
               {!isEditingFerreteria && (
-                <button onClick={() => setIsEditingFerreteria(true)} className="edit-button">Editar</button>
+                <button
+                  onClick={() => {
+                    if (ferreteriaData) {
+                      setEditedFerreteria(ferreteriaData);
+                      setEditedHorario(normalizeHorario(ferreteriaData.horario));
+                    }
+                    setIsEditingFerreteria(true);
+                  }}
+                  className="edit-button"
+                >
+                  Editar
+                </button>
               )}
             </div>
             <div className="card-body">
@@ -282,12 +390,31 @@ const PerfilPage: React.FC = () => {
               <div className="form-group">
                 <label>Horario:</label>
                 {isEditingFerreteria ? (
-                  <textarea
-                    name="horario"
-                    value={typeof editedFerreteria.horario === 'object' ? JSON.stringify(editedFerreteria.horario, null, 2) : (editedFerreteria.horario as string || '')}
-                    onChange={handleFerreteriaTextAreaChange}
-                    rows={6}
-                  />
+                  <div className="horario-grid">
+                    {diasSemana.map((dia) => (
+                      <div className="horario-item" key={dia}>
+                        <div className="horario-day">{dia.charAt(0).toUpperCase() + dia.slice(1)}</div>
+                        <div className="horario-inputs">
+                          <div className="horario-input">
+                            <span>Apertura</span>
+                            <input
+                              type="time"
+                              value={editedHorario[dia]?.apertura || ''}
+                              onChange={(e) => handleHorarioChange(dia, 'apertura', e.target.value)}
+                            />
+                          </div>
+                          <div className="horario-input">
+                            <span>Cierre</span>
+                            <input
+                              type="time"
+                              value={editedHorario[dia]?.cierre || ''}
+                              onChange={(e) => handleHorarioChange(dia, 'cierre', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div>
                     <span>{formatHorarioSummary(ferreteriaData.horario)}</span>
@@ -304,7 +431,10 @@ const PerfilPage: React.FC = () => {
                   <button onClick={handleSaveFerreteria} className="button-primary">Guardar</button>
                   <button onClick={() => {
                     setIsEditingFerreteria(false);
-                    setEditedFerreteria(ferreteriaData);
+                    if (ferreteriaData) {
+                      setEditedFerreteria(ferreteriaData);
+                      setEditedHorario(normalizeHorario(ferreteriaData.horario));
+                    }
                   }} className="button-secondary">Cancelar</button>
                 </div>
               )}
@@ -328,13 +458,13 @@ const PerfilPage: React.FC = () => {
           </div>
           <div className="card-body">
             <div className="stat-item">
-              <span>Total de Productos:</span> <strong>150</strong>
+              <span>Total de Productos:</span> <strong>{stats.totalProducts}</strong>
             </div>
             <div className="stat-item">
-              <span>Productos en Stock Bajo:</span> <strong className="text-error">10</strong>
+              <span>Productos en Stock Bajo:</span> <strong className="text-error">{stats.lowStockProducts}</strong>
             </div>
             <div className="stat-item">
-              <span>Pedidos Activos:</span> <strong>5</strong>
+              <span>Pedidos Activos:</span> <strong>{stats.activeOrders}</strong>
             </div>
             {/* Puedes añadir más estadísticas aquí */}
           </div>
