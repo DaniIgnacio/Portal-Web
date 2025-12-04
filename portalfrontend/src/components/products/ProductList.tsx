@@ -59,7 +59,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, onEdit, onDelete })
             </td>
             <td data-label="Nombre">{product.nombre}</td>
             <td data-label="SKU">{product.sku}</td>
-            <td data-label="Precio">${(product.precio / 100).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td data-label="Precio">${(product.precio ).toLocaleString('es-CL', { maximumFractionDigits: 2 })}</td>
             <td data-label="Stock">{product.stock}</td>
             <td data-label="Categoría">{product.categoria?.nombre || 'Sin categoría'}</td>
             <td data-label="Acciones">

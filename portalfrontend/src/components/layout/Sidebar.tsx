@@ -11,7 +11,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isFerreteria = false, isAdmin = false
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <h1>Geobra Portal</h1> {/* Cambiado a h1 para semántica */}
+        <h1>Geoferre Portal</h1> {/* Cambiado a h1 para semántica */}
       </div>
       <nav className="sidebar-nav">
         <ul>
@@ -36,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isFerreteria = false, isAdmin = false
         </ul>
       </nav>
       <div className="sidebar-footer">
-        <p>© 2025 Geobra. Todos los derechos reservados.</p>
+        <p>© 2025 Geoferre. Todos los derechos reservados.</p>
       </div>
     </div>
   );
