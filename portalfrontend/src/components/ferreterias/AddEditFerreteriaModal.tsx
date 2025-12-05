@@ -1,6 +1,7 @@
 // src/components/ferreterias/AddEditFerreteriaModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Ferreteria } from './FerreteriaList';
+import { dayOrder, parseHorarioInput, shortDayNames } from '../../utils/horarioUtils';
 import './AddEditFerreteriaModal.css';
 
 interface AddEditFerreteriaModalProps {
@@ -25,12 +26,34 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
     telefono: '',
     api_key: '',
     descripcion: '',
-    horario: '',
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const diasSemana = dayOrder;
+  const emptyHorario = useMemo(
+    () =>
+      diasSemana.reduce(
+        (acc, dia) => {
+          acc[dia] = { apertura: '', cierre: '' };
+          return acc;
+        },
+        {} as Record<string, { apertura: string; cierre: string }>
+      ),
+    [diasSemana]
+  );
+  const [horarioDias, setHorarioDias] = useState<Record<string, { apertura: string; cierre: string }>>(emptyHorario);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    const baseHorario = emptyHorario;
     if (ferreteriaToEdit) {
       setFormData({
         rut: ferreteriaToEdit.rut,
@@ -41,8 +64,32 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
         telefono: ferreteriaToEdit.telefono || '',
         api_key: ferreteriaToEdit.api_key,
         descripcion: ferreteriaToEdit.descripcion || '',
-        horario: ferreteriaToEdit.horario ? JSON.stringify(ferreteriaToEdit.horario, null, 2) : '',
       });
+
+      const parsedHorario = parseHorarioInput(ferreteriaToEdit.horario);
+      const nextHorario = { ...emptyHorario };
+      if (parsedHorario) {
+        for (const dia of diasSemana) {
+          const rango = parsedHorario[dia];
+          if (typeof rango === 'string') {
+            const [apertura, cierre] = rango.split('-').map((value: string) => value?.trim() || '');
+            if (apertura && cierre) {
+              nextHorario[dia] = { apertura, cierre };
+            } else {
+              nextHorario[dia] = { apertura: '', cierre: '' };
+            }
+          }
+        }
+      } else if (typeof ferreteriaToEdit.horario === 'string' && ferreteriaToEdit.horario.trim() !== '') {
+        // Single string (legacy). Apply to all days as opening hours if format valid.
+        const [apertura, cierre] = ferreteriaToEdit.horario.split('-').map((value: string) => value?.trim() || '');
+        if (apertura && cierre) {
+          for (const dia of diasSemana) {
+            nextHorario[dia] = { apertura, cierre };
+          }
+        }
+      }
+      setHorarioDias(nextHorario);
     } else {
       setFormData({
         rut: '',
@@ -53,10 +100,11 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
         telefono: '',
         api_key: '',
         descripcion: '',
-        horario: '',
       });
+      setHorarioDias(baseHorario);
     }
     setErrors({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ferreteriaToEdit, isOpen]);
 
   const validateForm = () => {
@@ -83,13 +131,24 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
       newErrors.rut = 'Formato de RUT inválido (ej: 12.345.678-9)';
     }
 
-    if (formData.horario) {
-      try {
-        JSON.parse(formData.horario);
-      } catch (error) {
-        newErrors.horario = 'Formato de JSON inválido para el horario';
+    let horarioError = '';
+    let hasAtLeastOneDay = false;
+    diasSemana.forEach((dia) => {
+      const { apertura, cierre } = horarioDias[dia];
+      if ((apertura && !cierre) || (!apertura && cierre)) {
+        horarioError = `Completa ambos horarios de ${dia} o déjalo vacío.`;
       }
+      if (apertura && cierre) {
+        hasAtLeastOneDay = true;
+        if (apertura >= cierre && !horarioError) {
+          horarioError = `En ${dia} la hora de apertura debe ser menor que la de cierre.`;
+        }
+      }
+    });
+    if (!horarioError && !hasAtLeastOneDay) {
+      horarioError = 'Configura el horario de al menos un día.';
     }
+    if (horarioError) newErrors.horario = horarioError;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -109,7 +168,16 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
       telefono: formData.telefono.trim() || undefined,
       api_key: formData.api_key.trim(),
       descripcion: formData.descripcion.trim() || undefined,
-      horario: formData.horario ? JSON.parse(formData.horario) : undefined,
+      horario: (() => {
+        const horarioPayload: Record<string, string> = {};
+        diasSemana.forEach((dia) => {
+          const { apertura, cierre } = horarioDias[dia];
+          if (apertura && cierre) {
+            horarioPayload[dia] = `${apertura}-${cierre}`;
+          }
+        });
+        return Object.keys(horarioPayload).length > 0 ? horarioPayload : undefined;
+      })(),
     };
     onSave(ferreteriaData);
   };
@@ -122,6 +190,20 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
     }
   };
 
+  const horarioPreview = useMemo(() => {
+    const items: { etiqueta: string; rango: string }[] = [];
+    diasSemana.forEach((dia) => {
+      const { apertura, cierre } = horarioDias[dia];
+      if (apertura && cierre) {
+        items.push({
+          etiqueta: shortDayNames[dia] || dia.charAt(0).toUpperCase() + dia.slice(1),
+          rango: `${apertura} - ${cierre}`,
+        });
+      }
+    });
+    return items;
+  }, [diasSemana, horarioDias]);
+
   if (!isOpen) return null;
 
   return (
@@ -131,7 +213,7 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
           <h2>{ferreteriaToEdit ? 'Editar Ferretería' : 'Añadir Ferretería'}</h2>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} noValidate className="modal-form">
           <div className="modal-body">
             <div className="form-group">
               <label htmlFor="rut">RUT *</label>
@@ -227,26 +309,60 @@ const AddEditFerreteriaModal: React.FC<AddEditFerreteriaModalProps> = ({
               ></textarea>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="horario">Horario (JSON)</label>
-              <textarea
-                id="horario"
-                name="horario"
-                value={formData.horario}
-                onChange={handleChange}
-                className={errors.horario ? 'error' : ''}
-                placeholder='{
-  "lunes": "09:00-18:00",
-  "martes": "09:00-18:00",
-  "miercoles": "09:00-18:00",
-  "jueves": "09:00-18:00",
-  "viernes": "09:00-18:00",
-  "sabado": "10:00-14:00",
-  "domingo": "cerrado"
-}'
-                rows={7}
-              ></textarea>
-              {errors.horario && <span className="error-message">{errors.horario}</span>}
+            <div className="form-group horario-group">
+              <label>Horario de atención</label>
+              <p className="horario-hint">Selecciona las horas de apertura y cierre por día. Deja vacío si la tienda está cerrada.</p>
+              <div className="horario-grid">
+                {diasSemana.map((dia) => (
+                  <div className="horario-item" key={dia}>
+                    <div className="horario-day">{dia.charAt(0).toUpperCase() + dia.slice(1)}</div>
+                    <div className="horario-inputs">
+                      <div className="horario-input">
+                        <span>Apertura</span>
+                        <input
+                          type="time"
+                          value={horarioDias[dia].apertura}
+                          onChange={(e) =>
+                            setHorarioDias((prev) => ({
+                              ...prev,
+                              [dia]: { ...prev[dia], apertura: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="horario-input">
+                        <span>Cierre</span>
+                        <input
+                          type="time"
+                          value={horarioDias[dia].cierre}
+                          onChange={(e) =>
+                            setHorarioDias((prev) => ({
+                              ...prev,
+                              [dia]: { ...prev[dia], cierre: e.target.value },
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {errors.horario && <span className="error-message horario-error">{errors.horario}</span>}
+              <div className="horario-preview-card">
+                <h4>Vista rápida</h4>
+                {horarioPreview.length > 0 ? (
+                  <ul>
+                    {horarioPreview.map(({ etiqueta, rango }) => (
+                      <li key={etiqueta}>
+                        <span>{etiqueta}</span>
+                        <strong>{rango}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="horario-empty">Configura al menos un día para ver el resumen.</p>
+                )}
+              </div>
             </div>
 
             <div className="form-group">

@@ -1,5 +1,5 @@
 // src/pages/CategoriasPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import CategoryList, { Category } from '../components/categories/CategoryList';
 import AddEditCategoryModal from '../components/categories/AddEditCategoryModal';
 import AddIcon from '../components/common/AddIcon';
@@ -20,6 +20,7 @@ const CategoriasPage = () => {
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [search, setSearch] = useState('');
 
   const { notifications, addNotification, dismissNotification } = useNotifications();
 
@@ -141,43 +142,149 @@ const CategoriasPage = () => {
     setCategoryToEdit(null);
   };
 
-  if (isLoading) return <div>Cargando categorías...</div>;
+  const filteredCategories = useMemo(() => {
+    if (!search.trim()) return categories;
+    const term = search.toLowerCase();
+    return categories.filter((category) => {
+      const values = [category.nombre, category.descripcion ?? ''];
+      return values.some((value) => value.toLowerCase().includes(term));
+    });
+  }, [categories, search]);
 
-  if (error) {
-    return (
-      <div>
-        <div className="categorias-page-header">
-          <h2>Gestión de Categorías</h2>
-          <button onClick={handleAddNew} className="add-category-button">
-            <AddIcon />
-            Añadir Nueva Categoría
-          </button>
+  const totalCategorias = categories.length;
+  const sinDescripcion = categories.filter((category) => !category.descripcion?.trim()).length;
+  const ultimaCategoria = useMemo(() => {
+    if (!categories.length) return null;
+    return categories[categories.length - 1];
+  }, [categories]);
+
+  const renderSkeleton = () => (
+    <div className="categorias-page">
+      <section className="categorias-hero categorias-hero--loading">
+        <div className="hero-content">
+          <div className="skeleton skeleton-badge" />
+          <div className="skeleton skeleton-title" />
+          <div className="skeleton skeleton-subtitle" />
+          <div className="hero-metrics loading">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="skeleton hero-metric-skeleton" />
+            ))}
+          </div>
         </div>
-        <div className="error-message">
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()} className="retry-button">
-            Reintentar
-          </button>
+      </section>
+      <section className="categorias-content">
+        <div className="categorias-card">
+          <div className="categorias-card-header loading">
+            <div className="skeleton skeleton-title small" />
+            <div className="skeleton skeleton-chip" />
+          </div>
+          <div className="skeleton skeleton-bar large" />
+          <div className="skeleton-list">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="skeleton skeleton-item" />
+            ))}
+          </div>
         </div>
-      </div>
-    );
+      </section>
+    </div>
+  );
+
+  if (isLoading) {
+    return renderSkeleton();
   }
 
   return (
-    <div>
-      <div className="categorias-page-header">
-        <h2>Gestión de Categorías</h2>
-        <button onClick={handleAddNew} className="add-category-button">
-          <AddIcon />
-          Añadir Nueva Categoría
-        </button>
-      </div>
+    <div className="categorias-page">
+      <section className="categorias-hero">
+        <div className="hero-content">
+          <span className="hero-badge">Catálogo</span>
+          <h1>Gestión de categorías</h1>
+          <p>
+            Define y organiza las categorías que estructuran tu inventario. Mantén un catálogo consistente para
+            mejorar la navegación y los reportes.
+          </p>
 
-      <CategoryList
-        categories={categories}
-        onEdit={handleEdit}
-        onDelete={handleDeleteRequest}
-      />
+          <div className="hero-metrics">
+            <div className="metric-card">
+              <span className="metric-label">Categorías activas</span>
+              <span className="metric-value">{totalCategorias}</span>
+            </div>
+            <div className="metric-card metric-card--soft">
+              <span className="metric-label">Sin descripción</span>
+              <span className="metric-value">{sinDescripcion}</span>
+            </div>
+            <div className="metric-card">
+              <span className="metric-label">Última creada</span>
+              <span className="metric-value">
+                {ultimaCategoria ? ultimaCategoria.nombre : 'N/D'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-actions">
+          <button onClick={handleAddNew} className="add-category-button hero-primary">
+            <AddIcon />
+            Nueva categoría
+          </button>
+          <button
+            className="ghost-button ghost-button--light"
+            onClick={() => window.location.reload()}
+            type="button"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+              <path
+                fill="currentColor"
+                d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5 0 .65-.13 1.27-.36 1.84l1.46 1.46A6.984 6.984 0 0 0 19 13c0-3.87-3.13-7-7-7zm-7.64.36L2.9 7.82A6.984 6.984 0 0 0 5 13c0 3.87 3.13 7 7 7v3l4-4-4-4v3c-2.76 0-5-2.24-5-5 0-.65.13-1.27.36-1.84l-1.46-1.46z"
+              />
+            </svg>
+            Recargar
+          </button>
+        </div>
+      </section>
+
+      <section className="categorias-content">
+        <div className="categorias-card">
+          <div className="categorias-card-header">
+            <div>
+              <h2>Listado de categorías</h2>
+              <p>Usa el buscador para encontrar categorías específicas o detectar brechas en tu catálogo.</p>
+            </div>
+            <div className="result-chip">
+              <span className="chip-label">Mostrando</span>
+              <span className="chip-value">{filteredCategories.length}</span>
+            </div>
+          </div>
+
+          <div className="categorias-toolbar">
+            <div className="input-wrapper">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+                <path
+                  fill="currentColor"
+                  d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
+                />
+              </svg>
+              <input
+                type="text"
+                placeholder="Buscar categorías…"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+          </div>
+
+          {error ? (
+            <div className="error-message">
+              <p>{error}</p>
+              <button onClick={() => window.location.reload()} className="retry-button">
+                Reintentar
+              </button>
+            </div>
+          ) : (
+            <CategoryList categories={filteredCategories} onEdit={handleEdit} onDelete={handleDeleteRequest} />
+          )}
+        </div>
+      </section>
 
       <AddEditCategoryModal
         isOpen={isModalOpen}
@@ -194,7 +301,6 @@ const CategoriasPage = () => {
         message={`¿Estás seguro de que quieres eliminar la categoría "${categoryToDelete?.nombre}"? Esta acción no se puede deshacer.`}
       />
 
-      {/* Contenedor de notificaciones */}
       <NotificationContainer notifications={notifications} onDismiss={dismissNotification} />
     </div>
   );

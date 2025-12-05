@@ -132,7 +132,7 @@ const AddEditProductModal: React.FC<ModalProps> = ({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-header">
             <h2>{productToEdit ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h2>
           </div>

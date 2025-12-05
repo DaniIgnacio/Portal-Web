@@ -7,37 +7,53 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.55);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  padding: 40px 16px;
+  overflow-y: auto;
   z-index: 1000;
 }
 
 .modal-content {
   background-color: #fff;
-  border-radius: 8px;
+  border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-width: 500px;
-  width: 90%;
+  max-width: 700px;
+  width: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
 }
 
 .modal-header {
-  padding: 16px 28px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 20px 32px;
+  border-bottom: 1px solid rgba(21, 27, 38, 0.08);
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.94), rgba(255, 138, 41, 0.85));
+  color: #f9fafb;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.25rem; /* 20px */
+  font-size: 1.4rem;
   font-weight: 600;
-  color: #111827;
 }
 
 /* Cuerpo del formulario con padding */
 .modal-body {
-  padding: 24px 28px;
+  padding: 24px 32px 28px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Estilo para cada grupo de label + input */
@@ -91,9 +107,9 @@
 
 /* Pie del modal con los botones */
 .modal-footer {
-  padding: 16px 28px;
-  border-top: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  padding: 20px 32px;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+  background-color: #f8fafc;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -143,4 +159,130 @@ input.error {
 input.error:focus {
   border-color: #ef4444;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+/* Horario selector */
+.horario-group {
+  margin-top: 28px;
+}
+
+.horario-hint {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.horario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.horario-item {
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 12px;
+  padding: 14px;
+  background: #f9fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.horario-day {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.horario-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.horario-input span {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.horario-input input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.9rem;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.horario-input input:focus {
+  outline: none;
+  border-color: rgba(255, 138, 41, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 138, 41, 0.22);
+}
+
+.horario-error {
+  display: block;
+  margin-top: 12px;
+}
+
+.horario-preview-card {
+  margin-top: 16px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  background: rgba(255, 138, 41, 0.08);
+}
+
+.horario-preview-card h4 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: #9a3412;
+}
+
+.horario-preview-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.horario-preview-card li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #73310c;
+}
+
+.horario-preview-card strong {
+  font-weight: 600;
+}
+
+.horario-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+@media (max-width: 640px) {
+  .modal-content {
+    max-width: 100%;
+    border-radius: 14px;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 20px;
+  }
+
+  .horario-grid {
+    grid-template-columns: 1fr;
+  }
 }

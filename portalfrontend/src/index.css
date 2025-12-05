@@ -1,20 +1,31 @@
 /* Variables CSS con la paleta de colores blanco y negro, bordes y sombras */
 :root {
-  --color-primary-darkest: #1A1A1A; /* Negro muy oscuro para elementos principales */
-  --color-secondary-dark: #333333; /* Gris oscuro para texto y fondos secundarios */
-  --color-background-light: #F5F5F5; /* Blanco muy claro para fondos */
-  --color-accent-medium: #CCCCCC; /* Gris claro para bordes y separadores */
-  --color-accent-light: #E6E6E6; /* Gris aún más claro para paneles */
-  --color-secondary-light: #EFEFEF; /* Fondo suave para etiquetas */
-  --color-text-dark: #444444; /* Gris oscuro para texto principal */
-  --color-text-soft: #666666; /* Texto secundario */
-  --color-white: #FFFFFF; /* Blanco puro */
+  --color-primary-darkest: #111827; /* Fondo base */
+  --color-secondary-dark: #1f2937; /* Variación oscura */
+  --color-background-light: #f3f4f6; /* Lienzo de contenido */
+  --color-surface: #ffffff; /* Tarjetas y paneles */
+  --color-accent-medium: rgba(255, 138, 41, 0.24); /* Borde suave con naranja */
+  --color-accent-light: rgba(255, 138, 41, 0.12); /* Rellenos cálidos */
+  --color-secondary-light: #f8fafc; /* Chips y fondos secundarios */
+  --color-text-dark: #111827; /* Texto principal */
+  --color-text-soft: #6b7280; /* Texto secundario */
+  --color-text-inverted: #f9fafb; /* Texto sobre fondos oscuros */
+  --color-white: #ffffff;
 
-  /* Colores funcionales (grises para coherencia con el tema) */
-  --color-success: #4CAF50; /* Verde funcional, mantengo este para mensajes de éxito */
-  --color-error: #F44336;   /* Rojo funcional, mantengo este para mensajes de error */
-  --color-info: #2196F3;    /* Azul funcional, mantengo este para mensajes de información */
-  --color-warning-dark: #F57C00; /* Naranja para advertencias/estados medios */
+  /* Paleta cálida */
+  --color-brand: #ff8a29;
+  --color-brand-dark: #d66f1d;
+  --color-brand-light: #ffc08c;
+
+  /* Colores funcionales */
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-info: #38bdf8;
+  --color-warning-dark: #f97316;
+
+  /* Gradientes */
+  --gradient-brand: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(255, 138, 41, 0.92) 100%);
+  --gradient-brand-soft: linear-gradient(135deg, rgba(17, 24, 39, 0.75) 0%, rgba(255, 138, 41, 0.65) 100%);
 
   /* Fuentes - limpias y legibles */
   --font-primary: 'Roboto', sans-serif;
@@ -81,28 +92,26 @@ button {
 }
 
 .button-primary {
-  background-color: var(--color-secondary-dark);
-  color: var(--color-white);
-  box-shadow: var(--shadow-sm);
+  background: var(--gradient-brand);
+  color: var(--color-text-inverted);
+  box-shadow: 0 14px 30px rgba(255, 138, 41, 0.25);
 }
 
 .button-primary:hover {
-  background-color: var(--color-primary-darkest);
-  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(255, 138, 41, 0.32);
 }
 
 .button-secondary {
-  background-color: var(--color-white);
+  background-color: var(--color-secondary-light);
   color: var(--color-text-dark);
-  border: 1px solid var(--color-accent-medium);
+  border: 1px solid rgba(255, 138, 41, 0.3);
   box-shadow: var(--shadow-sm);
 }
 
 .button-secondary:hover {
-  background-color: var(--color-accent-medium);
-  color: var(--color-white);
-  box-shadow: var(--shadow-md);
+  background-color: rgba(255, 138, 41, 0.1);
+  color: var(--color-text-dark);
   transform: translateY(-1px);
 }
 

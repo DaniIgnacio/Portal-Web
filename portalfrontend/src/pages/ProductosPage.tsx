@@ -189,9 +189,30 @@ const ProductosPage: React.FC = () => {
   const handleDismissAlert = (): void => setIsAlertVisible(false);
 
   const lowStockProducts = useMemo(
-    () => products.filter(p => (p as any).stock <= 5),
+    () => products.filter((p) => (p as any).stock <= 5),
     [products]
   );
+
+  const totalStock = useMemo(
+    () =>
+      products.reduce((sum, product) => {
+        const stock = Number((product as any).stock ?? 0);
+        return sum + (Number.isNaN(stock) ? 0 : stock);
+      }, 0),
+    [products]
+  );
+
+  const categoriesInUse = useMemo(() => {
+    const uniqueCategories = new Set<string>();
+    products.forEach((product) => {
+      const categoryId =
+        (product as any).categoria?.id_categoria ?? (product as any).id_categoria;
+      if (categoryId) {
+        uniqueCategories.add(String(categoryId));
+      }
+    });
+    return uniqueCategories.size;
+  }, [products]);
 
   // Filtro en memoria (nombre, categoría, stock bajo)
   const filteredProducts = useMemo(() => {
@@ -211,84 +232,141 @@ const ProductosPage: React.FC = () => {
     });
   }, [products, search, selectedCategory, showLowStockOnly]);
 
+  const renderStockAlert = (): React.ReactNode => {
+    if (!isAlertVisible || lowStockProducts.length === 0) return null;
+
+    return (
+      <div className="stock-alert">
+        <div className="stock-alert-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            fill="none"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+        </div>
+        <div className="stock-alert-content">
+          <h4>Alerta: productos con stock bajo</h4>
+          <p>
+            Los siguientes productos se están agotando:{' '}
+            {lowStockProducts
+              .map((p: any) => `${p.nombre} (Stock: ${p.stock})`)
+              .join(', ')}
+            .
+          </p>
+        </div>
+        <button
+          onClick={handleDismissAlert}
+          className="stock-alert-close"
+          aria-label="Cerrar alerta"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            fill="none"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    );
+  };
+
+  const renderEmptyState = (): React.ReactNode => (
+    <div className="empty-state">
+      <div className="empty-icon" aria-hidden>
+        <svg viewBox="0 0 24 24" width="40" height="40">
+          <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14l4-4h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+        </svg>
+      </div>
+      <h3>No hay resultados</h3>
+      <p>Ajusta tu búsqueda o filtros. También puedes crear un nuevo producto.</p>
+      <button onClick={handleAddNew} className="add-product-button small">
+        <AddIcon /> Crear producto
+      </button>
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div>
-        <div className="productos-page-header">
-          <h2>Gestión de Productos</h2>
-          <button className="add-product-button" disabled>
-            <AddIcon />
-            Añadir Nuevo Producto
-          </button>
-        </div>
-        <div className="skeleton skeleton-bar" />
-        <div className="skeleton-list">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="skeleton skeleton-item" />
-          ))}
-        </div>
+      <div className="productos-page">
+        <section className="productos-hero productos-hero--loading">
+          <div className="hero-content">
+            <div className="skeleton skeleton-badge" />
+            <div className="skeleton skeleton-title" />
+            <div className="skeleton skeleton-subtitle" />
+            <div className="hero-metrics loading">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="skeleton hero-metric-skeleton" />
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="productos-content">
+          <div className="productos-card">
+            <div className="productos-card-header loading">
+              <div className="skeleton skeleton-title small" />
+              <div className="skeleton skeleton-chip" />
+            </div>
+            <div className="skeleton skeleton-bar large" />
+            <div className="skeleton-list">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="skeleton skeleton-item" />
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
     );
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="productos-page-header">
-        <h2>Gestión de Productos</h2>
-        <button onClick={handleAddNew} className="add-product-button">
-          <AddIcon />
-          Añadir Nuevo Producto
-        </button>
-      </div>
+    <div className="productos-page">
+      <section className="productos-hero">
+        <div className="hero-content">
+          <span className="hero-badge">Inventario</span>
+          <h1>Gestión de Productos</h1>
+          <p>
+            Supervisa el estado de tu catálogo, identifica oportunidades y toma decisiones basadas en
+            datos en cuestión de segundos.
+          </p>
 
-      {/* Toolbar / Filtros */}
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <div className="input-wrapper">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
-              <path
-                fill="currentColor"
-                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar por nombre…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="hero-metrics">
+            <div className="metric-card">
+              <span className="metric-label">Productos activos</span>
+              <span className="metric-value">{products.length}</span>
+            </div>
+            <div className="metric-card">
+              <span className="metric-label">Categorías en uso</span>
+              <span className="metric-value">{categoriesInUse}</span>
+            </div>
+            <div className={`metric-card ${lowStockProducts.length > 0 ? 'metric-card--warning' : ''}`}>
+              <span className="metric-label">Alertas de stock</span>
+              <span className="metric-value">{lowStockProducts.length}</span>
+            </div>
+            <div className="metric-card">
+              <span className="metric-label">Unidades en inventario</span>
+              <span className="metric-value">{totalStock.toLocaleString('es-CL')}</span>
+            </div>
           </div>
-
-          <select
-            className="select"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((c: any) => (
-              <option
-                key={(c.id_categoria ?? c.id)?.toString()}
-                value={(c.id_categoria ?? c.id)?.toString()}
-              >
-                {c.nombre}
-              </option>
-            ))}
-          </select>
-
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={showLowStockOnly}
-              onChange={(e) => setShowLowStockOnly(e.target.checked)}
-            />
-            <span>Solo stock bajo (≤5)</span>
-          </label>
         </div>
 
-        <div className="toolbar-right">
-          <button className="ghost-button" onClick={() => void fetchData()}>
-            <svg viewBox="0 0 24 24" width="18" height="18">
+        <div className="hero-actions">
+          <button onClick={handleAddNew} className="add-product-button hero-primary">
+            <AddIcon />
+            Añadir producto
+          </button>
+          <button className="ghost-button ghost-button--light" onClick={() => void fetchData()}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
               <path
                 fill="currentColor"
                 d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5 0 .65-.13 1.27-.36 1.84l1.46 1.46A6.984 6.984 0 0 0 19 13c0-3.87-3.13-7-7-7zm-7.64.36L2.9 7.82A6.984 6.984 0 0 0 5 13c0 3.87 3.13 7 7 7v3l4-4-4-4v3c-2.76 0-5-2.24-5-5 0-.65.13-1.27.36-1.84l-1.46-1.46z"
@@ -297,89 +375,77 @@ const ProductosPage: React.FC = () => {
             Recargar
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Stats */}
-      <div className="stats">
-        <div className="stat-card">
-          <span className="stat-label">Productos</span>
-          <span className="stat-value">{products.length}</span>
-        </div>
-        <div className="stat-card warning">
-          <span className="stat-label">Stock bajo</span>
-          <span className="stat-value">{lowStockProducts.length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Mostrando</span>
-          <span className="stat-value">{filteredProducts.length}</span>
-        </div>
-      </div>
+      <section className="productos-content">
+        <div className="productos-card">
+          <div className="productos-card-header">
+            <div>
+              <h2>Listado de productos</h2>
+              <p>Filtra por nombre, categoría o alertas para mantener el inventario al día.</p>
+            </div>
+            <div className="result-chip">
+              <span className="chip-label">Mostrando</span>
+              <span className="chip-value">{filteredProducts.length}</span>
+            </div>
+          </div>
 
-      {/* Alerta stock bajo */}
-      {isAlertVisible && lowStockProducts.length > 0 && (
-        <div className="stock-alert">
-          <div className="stock-alert-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              fill="none"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+          <div className="productos-toolbar">
+            <div className="filter-field">
+              <div className="input-wrapper">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+                  <path
+                    fill="currentColor"
+                    d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="filter-field">
+              <select
+                className="select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="">Todas las categorías</option>
+                {categories.map((c: any) => (
+                  <option
+                    key={(c.id_categoria ?? c.id)?.toString()}
+                    value={(c.id_categoria ?? c.id)?.toString()}
+                  >
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <label className="checkbox filter-field">
+              <input
+                type="checkbox"
+                checked={showLowStockOnly}
+                onChange={(e) => setShowLowStockOnly(e.target.checked)}
               />
-            </svg>
+              <span>Solo stock bajo (≤5)</span>
+            </label>
           </div>
-          <div className="stock-alert-content">
-            <h4>Alerta: Productos con stock bajo</h4>
-            <p>
-              Los siguientes productos se están agotando:{' '}
-              {lowStockProducts
-                .map((p: any) => `${p.nombre} (Stock: ${p.stock})`)
-                .join(', ')}
-              .
-            </p>
-          </div>
-          <button
-            onClick={handleDismissAlert}
-            className="stock-alert-close"
-            aria-label="Cerrar alerta"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              fill="none"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
 
-      {/* Lista */}
-      {filteredProducts.length > 0 ? (
-        <ProductList products={filteredProducts} onEdit={handleEdit} onDelete={handleDeleteRequest} />
-      ) : (
-        <div className="empty-state">
-          <div className="empty-icon" aria-hidden>
-            <svg viewBox="0 0 24 24" width="40" height="40">
-              <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14l4-4h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
-            </svg>
-          </div>
-          <h3>No hay resultados</h3>
-          <p>Ajusta tu búsqueda o filtros. También puedes crear un nuevo producto.</p>
-          <button onClick={handleAddNew} className="add-product-button small">
-            <AddIcon /> Crear producto
-          </button>
-        </div>
-      )}
+          {renderStockAlert()}
 
-      {/* Modales */}
+          {filteredProducts.length > 0 ? (
+            <ProductList products={filteredProducts} onEdit={handleEdit} onDelete={handleDeleteRequest} />
+          ) : (
+            renderEmptyState()
+          )}
+        </div>
+      </section>
+
       <AddEditProductModal
         isOpen={isModalOpen}
         onClose={closeModal}
