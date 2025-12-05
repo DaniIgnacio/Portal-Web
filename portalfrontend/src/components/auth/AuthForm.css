@@ -696,71 +696,146 @@
 /* Estilos para el feedback de fortaleza de contraseña */
 .password-strength-feedback {
   margin-top: var(--spacing-md);
-  text-align: left;
-  padding: var(--spacing-md);
-  background-color: var(--color-background-light);
-  border-radius: var(--border-radius-sm);
-  border: 1px solid var(--color-accent-medium);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(42, 123, 190, 0.18);
+  background: linear-gradient(140deg, rgba(42, 123, 190, 0.12), rgba(42, 123, 190, 0.03));
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
-.password-strength-feedback .strength-label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--color-text-dark);
-  margin-bottom: var(--spacing-xs);
-  display: block;
-}
-
-.password-strength-feedback .strength-debil {
-  color: var(--color-error); /* Rojo para débil */
-}
-
-.password-strength-feedback .strength-media {
-  color: var(--color-info); /* Azul/Naranja para media (podrías usar un naranja si lo prefieres) */
-}
-
-.password-strength-feedback .strength-fuerte {
-  color: var(--color-success); /* Verde para fuerte */
-}
-
-.password-strength-feedback ul {
-  list-style: none;
-  padding: 0;
-  margin: var(--spacing-sm) 0 0 0;
-}
-
-.password-strength-feedback li {
-  font-size: 0.85rem;
-  color: var(--color-text-dark); /* Color normal para no cumplido */
-  margin-bottom: var(--spacing-xs);
+.password-strength-feedback .strength-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  justify-content: space-between;
+  gap: var(--spacing-md);
 }
 
-.password-strength-feedback li.fulfilled {
-  color: var(--color-success); /* Verde para los cumplidos */
-  font-weight: 500;
+.strength-title {
+  display: block;
+  font-weight: 600;
+  color: var(--color-secondary-dark);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
 }
 
-.password-strength-feedback li::before {
-  content: '•'; /* Un bullet simple */
-  color: var(--color-accent-medium); /* Color por defecto */
-  font-weight: bold;
-  display: inline-block;
-  width: 1em; 
-  margin-left: -1em;
+.strength-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-soft);
+  font-size: 0.85rem;
 }
 
-.password-strength-feedback li.fulfilled::before {
-  content: '✔'; /* Checkmark verde */
-  color: var(--color-success); 
+.strength-pill {
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
 }
 
-/* Estilo para la instrucción del mapa */
-.map-instruction {
-  font-size: 0.9rem;
-  color: var(--color-text-dark);
-  margin-bottom: var(--spacing-sm);
-  text-align: left;
+.strength-pill.strength-débil {
+  background-color: rgba(244, 67, 54, 0.15);
+  color: var(--color-error);
+  border-color: rgba(244, 67, 54, 0.3);
+}
+
+.strength-pill.strength-media {
+  background-color: rgba(255, 171, 64, 0.18);
+  color: var(--color-warning-dark);
+  border-color: rgba(255, 171, 64, 0.35);
+}
+
+.strength-pill.strength-fuerte {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: var(--color-success);
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
+.strength-progress {
+  display: flex;
+  gap: 6px;
+}
+
+.progress-segment {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--color-accent-light);
+  transition: background-color 0.25s ease, transform 0.25s ease;
+}
+
+.progress-segment.is-filled {
+  transform: scaleY(1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.progress-segment.is-filled.strength-débil {
+  background-color: var(--color-error);
+}
+
+.progress-segment.is-filled.strength-media {
+  background-color: var(--color-warning-dark);
+}
+
+.progress-segment.is-filled.strength-fuerte {
+  background-color: var(--color-success);
+}
+
+.strength-summary {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-soft);
+  line-height: 1.6;
+}
+
+.summary-item {
+  color: var(--color-text-soft);
+}
+
+.summary-item.fulfilled {
+  color: var(--color-success);
+}
+
+.summary-item em {
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.input-with-action {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-action input {
+  padding-right: 44px;
+}
+
+.input-action-button {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--color-secondary-dark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.input-action-button:focus-visible {
+  outline: 2px solid var(--color-secondary-dark);
+  outline-offset: 2px;
+}
+
+.input-action-button svg {
+  width: 20px;
+  height: 20px;
 }

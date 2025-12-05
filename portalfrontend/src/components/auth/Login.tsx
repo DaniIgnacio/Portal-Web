@@ -6,6 +6,40 @@ import { Link, useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
+const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.8}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M2.25 12s3.75-6.75 9.75-6.75 9.75 6.75 9.75 6.75-3.75 6.75-9.75 6.75S2.25 12 2.25 12Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.8}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M3.98 8.223C3.352 9.22 3 10.346 3 11.5c0 4.142 3.357 7.499 7.5 7.499 1.154 0 2.28-.352 3.277-.98m3.243-2.19c.622-.99.98-2.11.98-3.33 0-4.142-3.358-7.5-7.5-7.5-1.22 0-2.34.358-3.33.98" />
+    <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+    <path d="M21 21 3 3" />
+  </svg>
+);
 
 interface LoginProps {
   onLoginSuccess: (user: any, token: string) => void; // Cambiado de setIsAuthenticated.
@@ -14,6 +48,7 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const { notifications, addNotification, dismissNotification } = useNotifications();
@@ -72,14 +107,24 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
           <div className="form-group">
             <label htmlFor="password">Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Tu contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="input-with-action">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Tu contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="input-action-button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword ? <EyeOffIcon aria-hidden="true" /> : <EyeIcon aria-hidden="true" />}
+              </button>
+            </div>
           </div>
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Ingresando...' : 'Iniciar Sesión'}

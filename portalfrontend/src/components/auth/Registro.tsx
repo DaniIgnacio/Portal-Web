@@ -6,6 +6,40 @@ import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
 import usePasswordStrength from '../../hooks/usePasswordStrength';
 import { supabase } from '../../supabaseClient';
+const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.8}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M2.25 12s3.75-6.75 9.75-6.75 9.75 6.75 9.75 6.75-3.75 6.75-9.75 6.75S2.25 12 2.25 12Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EyeOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.8}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M3.98 8.223C3.352 9.22 3 10.346 3 11.5c0 4.142 3.357 7.499 7.5 7.499 1.154 0 2.28-.352 3.277-.98m3.243-2.19c.622-.99.98-2.11.98-3.33 0-4.142-3.358-7.5-7.5-7.5-1.22 0-2.34.358-3.33.98" />
+    <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+    <path d="M21 21 3 3" />
+  </svg>
+);
 interface RegistroProps {
   onRegisterSuccess: () => void;
 }
@@ -74,6 +108,9 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
   const [nombre, setNombre] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [rutUsuario, setRutUsuario] = useState<string>('');
   const [rut, setRut] = useState<string>('');
   const [razonSocial, setRazonSocial] = useState<string>('');
@@ -108,10 +145,31 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
   const { notifications, addNotification, dismissNotification } = useNotifications();
   
   const passwordStrength = usePasswordStrength(password);
+  const strengthVariant = passwordStrength.strength.toLowerCase();
   const currentStepConfig = STEPS[currentStep];
   const isLastStep = currentStep === STEPS.length - 1;
-  const isPasswordGuard =
-    passwordStrength.strength === 'Débil' || !passwordStrength.isLongEnough || password.length === 0;
+  const isPasswordWeak =
+    passwordStrength.strength === 'Débil' ||
+    !passwordStrength.isLongEnough ||
+    password.length === 0;
+  const isPasswordMismatch = password !== confirmPassword;
+  const isPasswordGuard = isPasswordWeak || isPasswordMismatch;
+  const passwordRequirements = useMemo(
+    () => [
+      { label: 'Al menos 8 caracteres', met: passwordStrength.isLongEnough },
+      { label: 'Una letra mayúscula', met: passwordStrength.hasUpperCase },
+      { label: 'Una letra minúscula', met: passwordStrength.hasLowerCase },
+      { label: 'Un número', met: passwordStrength.hasNumber },
+      { label: 'Un símbolo (!@#$...)', met: passwordStrength.hasSymbol },
+    ],
+    [
+      passwordStrength.hasLowerCase,
+      passwordStrength.hasNumber,
+      passwordStrength.hasSymbol,
+      passwordStrength.hasUpperCase,
+      passwordStrength.isLongEnough,
+    ]
+  );
   const mapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY ?? '';
 
   const horarioPreview = useMemo(
@@ -344,8 +402,12 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
           addNotification('Completa todos los datos del usuario antes de continuar.', 'error');
           return false;
         }
-        if (isPasswordGuard) {
-          addNotification('Mejora la contraseña para poder continuar.', 'error');
+        if (isPasswordMismatch) {
+          addNotification('Las contraseñas deben coincidir para continuar.', 'error');
+          return false;
+        }
+        if (isPasswordWeak) {
+          addNotification('Mejora la fortaleza de la contraseña para continuar.', 'error');
           return false;
         }
         return true;
@@ -531,29 +593,82 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
                 </div>
                 <div className="form-group span-2">
                   <label htmlFor="password">Contraseña</label>
-                  <input
-                    id="password"
-                    type="password"
-                    placeholder="Tu contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <div className="input-with-action">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Tu contraseña"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="input-action-button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    >
+                      {showPassword ? <EyeOffIcon aria-hidden="true" /> : <EyeIcon aria-hidden="true" />}
+                    </button>
+                  </div>
                   <div className="password-strength-feedback">
-                    <p className="strength-label">
-                      Fortaleza:{' '}
-                      <span className={`strength-${passwordStrength.strength.toLowerCase()}`}>
+                    <div className="strength-header">
+                      <div>
+                        <span className="strength-title">Fortaleza de la contraseña</span>
+                        <p className="strength-subtitle">Cumple los requisitos para proteger tu cuenta.</p>
+                      </div>
+                      <span className={`strength-pill strength-${strengthVariant}`}>
                         {passwordStrength.strength}
                       </span>
+                    </div>
+                    <div className="strength-progress">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <span
+                          key={index}
+                          className={`progress-segment${index < passwordStrength.score ? ` is-filled strength-${strengthVariant}` : ''}`}
+                        />
+                      ))}
+                    </div>
+                    <p className="strength-summary">
+                      {passwordRequirements.map((requirement, index) => {
+                        const prefix = `${index + 1}.`;
+                        const status = requirement.met ? 'Listo' : 'Pendiente';
+                        return (
+                          <span
+                            key={requirement.label}
+                            className={`summary-item ${requirement.met ? 'fulfilled' : ''}`}
+                          >
+                            <strong>{prefix}</strong> {requirement.label} <em>({status})</em>
+                            {index < passwordRequirements.length - 1 ? ' · ' : ''}
+                          </span>
+                        );
+                      })}
                     </p>
-                    <ul>
-                      <li className={passwordStrength.isLongEnough ? 'fulfilled' : ''}>Al menos 8 caracteres</li>
-                      <li className={passwordStrength.hasUpperCase ? 'fulfilled' : ''}>Una letra mayúscula</li>
-                      <li className={passwordStrength.hasLowerCase ? 'fulfilled' : ''}>Una letra minúscula</li>
-                      <li className={passwordStrength.hasNumber ? 'fulfilled' : ''}>Un número</li>
-                      <li className={passwordStrength.hasSymbol ? 'fulfilled' : ''}>Un símbolo (!@#$...)</li>
-                    </ul>
                   </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirmar contraseña</label>
+                  <div className="input-with-action">
+                    <input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Repite tu contraseña"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="input-action-button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      aria-label={showConfirmPassword ? 'Ocultar confirmación' : 'Mostrar confirmación'}
+                    >
+                      {showConfirmPassword ? <EyeOffIcon aria-hidden="true" /> : <EyeIcon aria-hidden="true" />}
+                    </button>
+                  </div>
+                  {confirmPassword && confirmPassword !== password && (
+                    <span className="input-error">Las contraseñas no coinciden.</span>
+                  )}
                 </div>
                 <div className="form-group">
                   <label htmlFor="rutUsuario">RUT del Usuario</label>
