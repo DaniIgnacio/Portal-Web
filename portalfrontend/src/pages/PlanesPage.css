@@ -1,0 +1,90 @@
+.planes-container {
+  padding: 20px;
+}
+
+.planes-grid {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.plan-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 320px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  min-height: 520px;
+}
+
+.plan-card h3 {
+  margin-bottom: 10px;
+}
+
+.price {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #ff8a29;
+}
+
+.features {
+  margin-bottom: 25px;
+  flex-grow: 1; /* Ocupa espacio disponible para empujar el botón hacia abajo */
+}
+.features li {
+  margin-bottom: 6px;
+}
+
+.btn-select {
+  background: #ff8a29;
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.btn-select:hover {
+  background: #ff6e00;
+}
+.plan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+}
+
+.plan-card button {
+  width: 100%;
+}
+.plan-description {
+  color: #444;
+  font-size: 0.95rem;
+  margin-bottom: 15px;
+  min-height: 70px; /* 🔥 Misma altura en todas */
+}
+.features {
+  flex-grow: 1; /* 🔥 Empuja el botón hacia abajo */
+  margin-bottom: 20px;
+}
+
+.plan-button-container {
+  margin-top: auto; /* 🔥 Siempre queda al final */
+}
+
+.plan-badge {
+  background: #ff8a29;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8em;
+  display: inline-block;
+  font-weight: 600;
+  margin-bottom: 10px;
+}

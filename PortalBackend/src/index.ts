@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api', productRoutes);
 app.use('/api', categoryRoutes);
-app.use('/api', ferreteriaRoutes);
+app.use('/ferreteria', ferreteriaRoutes);
 app.use('/api', authRoutes);
 app.use('/api', clienteRoutes);
 app.use('/api', pedidoRoutes);
