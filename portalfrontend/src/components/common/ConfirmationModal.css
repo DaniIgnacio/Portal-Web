@@ -56,14 +56,14 @@
 
 /* Estilos específicos para los botones del modal de confirmación */
 .confirm-modal-footer .button-danger {
-  background-color: var(--color-error); /* Rojo para confirmar eliminación */
-  color: var(--color-white);
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
   box-shadow: var(--shadow-sm);
 }
 
 .confirm-modal-footer .button-danger:hover {
-  background-color: #C0222F; /* Tono más oscuro al pasar el ratón */
-  transform: translateY(-1px);
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
   box-shadow: var(--shadow-md);
 }
 

@@ -17,9 +17,10 @@
 }
 
 .modal-content {
-  background-color: #fff;
+  background-color: var(--color-white);
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
   max-width: 700px;
   width: 100%;
   overflow: hidden;
@@ -30,9 +31,9 @@
 
 .modal-header {
   padding: 20px 32px;
-  border-bottom: 1px solid rgba(21, 27, 38, 0.08);
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.94), rgba(255, 138, 41, 0.85));
-  color: #f9fafb;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
 }
 
 .modal-header h2 {
@@ -68,25 +69,25 @@
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-dark);
 }
 
 .form-group input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  font-size: 1rem; /* 16px */
-  color: #111827;
+  font-size: 1rem;
+  color: var(--color-text-dark);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(247, 193, 62, 0.25);
 }
 
 .form-group input::placeholder {
@@ -108,8 +109,8 @@
 /* Pie del modal con los botones */
 .modal-footer {
   padding: 20px 32px;
-  border-top: 1px solid rgba(17, 24, 39, 0.08);
-  background-color: #f8fafc;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-secondary-light);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -117,32 +118,33 @@
 
 .modal-footer button {
   padding: 10px 16px;
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   font-weight: 600;
   border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .button-secondary {
-  background-color: #fff;
-  color: #374151;
-  border-color: #d1d5db;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-xs);
 }
 
 .button-secondary:hover {
-  background-color: #f9fafb;
+  background-color: var(--color-secondary-light);
 }
 
 .button-primary {
-  background-color: #1f2937;
-  color: #fff;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverted);
 }
 
 .button-primary:hover {
-  background-color: #374151;
+  background-color: var(--color-primary-strong);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Estilos para mensajes de error */
@@ -169,7 +171,7 @@ input.error:focus {
 .horario-hint {
   margin: 0 0 16px;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--color-text-soft);
 }
 
 .horario-grid {
@@ -179,19 +181,19 @@ input.error:focus {
 }
 
 .horario-item {
-  border: 1px solid rgba(17, 24, 39, 0.08);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 14px;
-  background: #f9fafc;
+  background: var(--color-secondary-light);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: none;
 }
 
 .horario-day {
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text-dark);
   font-size: 0.95rem;
 }
 
@@ -204,7 +206,7 @@ input.error:focus {
 .horario-input span {
   display: block;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text-soft);
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -212,18 +214,18 @@ input.error:focus {
 
 .horario-input input {
   width: 100%;
-  border: 1px solid rgba(148, 163, 184, 0.6);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 8px;
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--color-white);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .horario-input input:focus {
   outline: none;
-  border-color: rgba(255, 138, 41, 0.6);
-  box-shadow: 0 0 0 3px rgba(255, 138, 41, 0.22);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(247, 193, 62, 0.22);
 }
 
 .horario-error {
@@ -233,16 +235,16 @@ input.error:focus {
 
 .horario-preview-card {
   margin-top: 16px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
+  border: 1px solid var(--color-accent-medium);
   border-radius: 12px;
   padding: 16px;
-  background: rgba(255, 138, 41, 0.08);
+  background: var(--color-primary-soft);
 }
 
 .horario-preview-card h4 {
   margin: 0 0 10px;
   font-size: 0.95rem;
-  color: #9a3412;
+  color: var(--color-text-dark);
 }
 
 .horario-preview-card ul {
@@ -257,7 +259,7 @@ input.error:focus {
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;
-  color: #73310c;
+  color: var(--color-text-dark);
 }
 
 .horario-preview-card strong {
@@ -267,7 +269,7 @@ input.error:focus {
 .horario-empty {
   margin: 0;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--color-text-soft);
 }
 
 @media (max-width: 640px) {

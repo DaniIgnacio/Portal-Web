@@ -1,54 +1,9 @@
-/* Variables CSS con la paleta de colores blanco y negro, bordes y sombras */
+@import './styles/theme.css';
+
 :root {
-  --color-primary-darkest: #111827; /* Fondo base */
-  --color-secondary-dark: #1f2937; /* Variación oscura */
-  --color-background-light: #f3f4f6; /* Lienzo de contenido */
-  --color-surface: #ffffff; /* Tarjetas y paneles */
-  --color-accent-medium: rgba(255, 138, 41, 0.24); /* Borde suave con naranja */
-  --color-accent-light: rgba(255, 138, 41, 0.12); /* Rellenos cálidos */
-  --color-secondary-light: #f8fafc; /* Chips y fondos secundarios */
-  --color-text-dark: #111827; /* Texto principal */
-  --color-text-soft: #6b7280; /* Texto secundario */
-  --color-text-inverted: #f9fafb; /* Texto sobre fondos oscuros */
-  --color-white: #ffffff;
-
-  /* Paleta cálida */
-  --color-brand: #ff8a29;
-  --color-brand-dark: #d66f1d;
-  --color-brand-light: #ffc08c;
-
-  /* Colores funcionales */
-  --color-success: #22c55e;
-  --color-error: #ef4444;
-  --color-info: #38bdf8;
-  --color-warning-dark: #f97316;
-
-  /* Gradientes */
-  --gradient-brand: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(255, 138, 41, 0.92) 100%);
-  --gradient-brand-soft: linear-gradient(135deg, rgba(17, 24, 39, 0.75) 0%, rgba(255, 138, 41, 0.65) 100%);
-
-  /* Fuentes - limpias y legibles */
-  --font-primary: 'Roboto', sans-serif;
-  --font-secondary: 'Open Sans', sans-serif;
-
-  /* Espaciado */
-  --spacing-xs: 8px;
-  --spacing-sm: 12px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-xxl: 48px; /* Nuevo espaciado para padding de card */
-
-  /* Border Radius */
-  --border-radius-sm: 4px;
-  --border-radius-md: 6px;
-  --border-radius-lg: 8px;
-
-  /* Sombras sutiles y elegantes para un aspecto "lindo" */
-  --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.15);
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --color-brand: var(--color-primary);
+  --color-brand-dark: var(--color-primary-strong);
+  --color-brand-light: var(--color-primary-soft);
 }
 
 /* Reseteo de box-sizing para todos los elementos */
@@ -92,25 +47,25 @@ button {
 }
 
 .button-primary {
-  background: var(--gradient-brand);
+  background-color: var(--color-primary);
   color: var(--color-text-inverted);
-  box-shadow: 0 14px 30px rgba(255, 138, 41, 0.25);
+  box-shadow: var(--shadow-sm);
 }
 
 .button-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 18px 36px rgba(255, 138, 41, 0.32);
+  box-shadow: var(--shadow-md);
 }
 
 .button-secondary {
-  background-color: var(--color-secondary-light);
+  background-color: var(--color-white);
   color: var(--color-text-dark);
-  border: 1px solid rgba(255, 138, 41, 0.3);
+  border: 1px solid var(--color-accent-medium);
   box-shadow: var(--shadow-sm);
 }
 
 .button-secondary:hover {
-  background-color: rgba(255, 138, 41, 0.1);
+  background-color: var(--color-accent-light);
   color: var(--color-text-dark);
   transform: translateY(-1px);
 }

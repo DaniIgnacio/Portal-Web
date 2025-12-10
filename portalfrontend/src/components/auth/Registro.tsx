@@ -130,8 +130,8 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
-    lat: -33.4489,
-    lng: -70.6693,
+    lat: -36.6067,
+    lng: -72.1033,
   });
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [mapReady, setMapReady] = useState(false);
@@ -204,7 +204,7 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
       setMarkerPosition(next);
     } else if (latitud === '' && longitud === '') {
       setMarkerPosition(null);
-      setMapCenter({ lat: -33.4489, lng: -70.6693 });
+      setMapCenter({ lat: -36.6067, lng: -72.1033 });
     }
   }, [latitud, longitud]);
 

@@ -6,6 +6,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import './AuthForm.css';
 import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
+
+const GEOFERRE_LOGO_URL =
+  'https://bhlsmetxwtqypdyxcmyk.supabase.co/storage/v1/object/sign/img/760568fe-1610-467f-8fee-8e964131647a.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jOTYxYjljOS1mOWZmLTQzZDUtYWIzNS1iOWVmYTI4ODhlOWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvNzYwNTY4ZmUtMTYxMC00NjdmLThmZWUtOGU5NjQxMzE2NDdhLmpwZyIsImlhdCI6MTc2NTMzMTYwNiwiZXhwIjoxNzk2ODY3NjA2fQ.ubjRS4NKqD8rrlQPv246aaFuB3_wwgNAzhP8DjIzVZs';
 const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="20"
@@ -90,6 +93,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
+          <img src={GEOFERRE_LOGO_URL} alt="Geoferre" className="auth-logo" />
           <h2>Bienvenido</h2>
           <p>Ingresa tus credenciales para acceder a tu portal.</p>
         </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './PedidosPage.css';
+import ConfirmationModal from '../components/common/ConfirmationModal';
 import { useNotifications } from '../hooks/useNotifications';
 
 interface PedidoDetalle {
@@ -30,6 +31,7 @@ const PedidosPage: React.FC = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
+  const [pedidoToDelete, setPedidoToDelete] = useState<string | null>(null);
 
   const { addNotification } = useNotifications();
 
@@ -39,6 +41,26 @@ const PedidosPage: React.FC = () => {
       return { Authorization: `Bearer ${token}` };
     }
     return {};
+  };
+
+  const confirmDeletePedido = async () => {
+    if (!pedidoToDelete) return;
+    try {
+      const res = await fetch(`${API_URL}/pedidos/${pedidoToDelete}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) {
+        throw new Error('No se pudo eliminar el pedido');
+      }
+      setPedidos((prev) => prev.filter((p) => p.id_pedido !== pedidoToDelete));
+      addNotification('Pedido eliminado', 'success');
+    } catch (err: any) {
+      console.error('Error deleting pedido:', err);
+      addNotification(err.message || 'Error al eliminar el pedido', 'error');
+    } finally {
+      setPedidoToDelete(null);
+    }
   };
 
   const fetchPedidos = async () => {
@@ -97,6 +119,7 @@ const PedidosPage: React.FC = () => {
                 <th>Gateway</th>
                 <th>Paid At</th>
                 <th>Detalles</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -106,7 +129,7 @@ const PedidosPage: React.FC = () => {
                     <td>{p.id_pedido}</td>
                     <td>{formatDate(p.fecha_pedido)}</td>
                     <td>{p.estado}</td>
-                    <td>${p.monto_total.toFixed(2)}</td>
+                    <td>${p.monto_total.toFixed(0)}</td>
                     <td>{p.id_cliente || '-'}</td>
                     <td>{p.gateway ? `${p.gateway} (${p.gateway_ref || ''})` : '-'}</td>
                     <td>{formatDate(p.paid_at || undefined)}</td>
@@ -119,10 +142,20 @@ const PedidosPage: React.FC = () => {
                         '-'
                       )}
                     </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="action-button delete-button"
+                          onClick={() => setPedidoToDelete(p.id_pedido)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                   {expandedPedido === p.id_pedido && (
                     <tr className="pedido-details-row">
-                      <td colSpan={8}>
+                      <td colSpan={9}>
                         <div className="pedido-details">
                           <table className="detalle-table">
                             <thead>
@@ -138,8 +171,8 @@ const PedidosPage: React.FC = () => {
                                 <tr key={d.id_detalle_pedido}>
                                   <td>{d.id_producto}</td>
                                   <td>{d.cantidad}</td>
-                                  <td>${(d.precio_unitario_venta ?? 0).toFixed(2)}</td>
-                                  <td>${((d.precio_unitario_venta ?? 0) * d.cantidad).toFixed(2)}</td>
+                                  <td>${(d.precio_unitario_venta ?? 0).toFixed(0)}</td>
+                                  <td>${((d.precio_unitario_venta ?? 0) * d.cantidad).toFixed(0)}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -154,6 +187,13 @@ const PedidosPage: React.FC = () => {
           </table>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={Boolean(pedidoToDelete)}
+        onClose={() => setPedidoToDelete(null)}
+        onConfirm={confirmDeletePedido}
+        title="Eliminar pedido"
+        message="¿Seguro que deseas eliminar este pedido? Esta acción no se puede deshacer."
+      />
     </div>
   );
 };
