@@ -2,7 +2,7 @@
   align-items: stretch;
   min-height: 100vh;
   padding: var(--spacing-xxl) var(--spacing-xl);
-  background: linear-gradient(160deg, #f2f4f7 0%, #e5e9f0 35%, #f8f9fb 100%);
+  background-color: var(--color-background-light);
 }
 
 .register-wizard {
@@ -60,29 +60,29 @@
   display: grid;
   place-items: center;
   font-weight: 700;
-  color: var(--color-secondary-dark);
+  color: var(--color-text-dark);
   box-shadow: var(--shadow-xs);
   z-index: 1;
 }
 
 .progress-text span {
   font-weight: 600;
-  color: var(--color-secondary-dark);
+  color: var(--color-text-dark);
 }
 
 .progress-step.is-active .progress-circle {
-  background-color: var(--color-primary-darkest);
-  color: var(--color-white);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverted);
 }
 
 .progress-step.is-complete .progress-circle {
-  background-color: var(--color-secondary-dark);
-  color: var(--color-white);
+  background-color: var(--color-primary-strong);
+  color: var(--color-text-inverted);
 }
 
 .progress-step.is-active::before,
 .progress-step.is-complete::before {
-  background-color: var(--color-secondary-dark);
+  background-color: var(--color-primary);
 }
 
 .wizard-step-header h2 {
@@ -172,19 +172,20 @@
 }
 
 .wizard-button.primary {
-  background-color: var(--color-secondary-dark);
-  color: var(--color-white);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverted);
   box-shadow: var(--shadow-sm);
 }
 
 .wizard-button.primary:hover:not(:disabled) {
-  background-color: var(--color-primary-darkest);
+  background-color: var(--color-primary-strong);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .wizard-button.primary:disabled {
-  background-color: var(--color-accent-medium);
+  background-color: var(--color-accent-light);
+  color: var(--color-text-soft);
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -192,12 +193,12 @@
 
 .wizard-button.secondary {
   background-color: var(--color-white);
-  color: var(--color-secondary-dark);
+  color: var(--color-text-dark);
   border: 1px solid var(--color-accent-medium);
 }
 
 .wizard-button.secondary:hover:not(:disabled) {
-  background-color: var(--color-background-light);
+  background-color: var(--color-secondary-light);
 }
 
 .wizard-button.secondary:disabled {
@@ -212,14 +213,14 @@
 }
 
 .wizard-footer a {
-  color: var(--color-secondary-dark);
+  color: var(--color-primary);
   font-weight: 600;
   text-decoration: none;
 }
 
 .wizard-footer a:hover {
   text-decoration: underline;
-  color: var(--color-primary-darkest);
+  color: var(--color-primary-strong);
 }
 /* src/pages/AuthForm.css */
 
@@ -272,7 +273,7 @@
 
 .section-tag {
   background-color: var(--color-secondary-light);
-  color: var(--color-secondary-dark);
+  color: var(--color-primary);
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-weight: 600;
@@ -324,8 +325,8 @@
 }
 
 .sidebar-card.highlight {
-  background: linear-gradient(140deg, rgba(42, 123, 190, 0.08), rgba(42, 123, 190, 0.02));
-  border-color: rgba(42, 123, 190, 0.15);
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-accent-medium);
 }
 
 .sidebar-card h4 {
@@ -440,8 +441,8 @@
 
 .horario-input input:focus {
   outline: none;
-  border-color: var(--color-secondary-dark);
-  box-shadow: 0 0 0 2px rgba(51, 51, 51, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(247, 193, 62, 0.2);
 }
 
 .horario-preview {
@@ -547,6 +548,18 @@
 
 .auth-header {
   margin-bottom: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.auth-logo {
+  width: 300px;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
 }
 
 .auth-header h2 {
@@ -599,22 +612,22 @@
 }
 
 .auth-form .form-group textarea:focus {
-  border-color: var(--color-secondary-dark);
-  box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(247, 193, 62, 0.25);
   outline: none;
 }
 
 .auth-form .form-group input:focus {
-  border-color: var(--color-secondary-dark);
-  box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(247, 193, 62, 0.25);
   outline: none;
 }
 
 .auth-button {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg); /* Aumentar padding */
-  background-color: var(--color-secondary-dark); /* Botón oscuro */
-  color: var(--color-white);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverted);
   border: none;
   border-radius: var(--border-radius-md);
   font-size: 1.05rem; /* Ajustar tamaño de fuente */
@@ -626,7 +639,7 @@
 }
 
 .auth-button:hover {
-  background-color: var(--color-primary-darkest); /* Más oscuro al pasar el ratón */
+  background-color: var(--color-primary-strong);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
@@ -645,14 +658,14 @@
 }
 
 .auth-footer a {
-  color: var(--color-secondary-dark);
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 600;
 }
 
 .auth-footer a:hover {
   text-decoration: underline;
-  color: var(--color-primary-darkest);
+  color: var(--color-primary-strong);
 }
 
 .auth-form .form-separator {
@@ -698,8 +711,8 @@
   margin-top: var(--spacing-md);
   padding: var(--spacing-lg);
   border-radius: var(--border-radius-md);
-  border: 1px solid rgba(42, 123, 190, 0.18);
-  background: linear-gradient(140deg, rgba(42, 123, 190, 0.12), rgba(42, 123, 190, 0.03));
+  border: 1px solid var(--color-accent-medium);
+  background-color: var(--color-primary-soft);
   box-shadow: var(--shadow-xs);
   display: flex;
   flex-direction: column;
@@ -716,7 +729,7 @@
 .strength-title {
   display: block;
   font-weight: 600;
-  color: var(--color-secondary-dark);
+  color: var(--color-primary);
   text-transform: uppercase;
   font-size: 0.85rem;
   letter-spacing: 0.05em;
@@ -822,7 +835,7 @@
   right: 12px;
   background: transparent;
   border: none;
-  color: var(--color-secondary-dark);
+  color: var(--color-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -831,7 +844,7 @@
 }
 
 .input-action-button:focus-visible {
-  outline: 2px solid var(--color-secondary-dark);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 

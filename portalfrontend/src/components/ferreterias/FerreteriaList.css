@@ -33,7 +33,7 @@
 .ferreteria-table th {
   background-color: var(--color-background-light);
   font-weight: 700;
-  color: var(--color-primary-darkest);
+  color: var(--color-text-soft);
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -61,23 +61,24 @@
 }
 
 .edit-button {
-  background-color: var(--color-secondary-dark);
-  color: var(--color-white);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverted);
 }
 
 .edit-button:hover {
-  background-color: var(--color-primary-darkest);
+  background-color: var(--color-primary-strong);
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
 .delete-button {
-  background-color: var(--color-error);
-  color: var(--color-white);
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
 }
 
 .delete-button:hover {
-  background-color: #C0222F;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #b91c1c;
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
@@ -121,7 +122,7 @@
     white-space: nowrap;
     text-align: left;
     font-weight: 600;
-    color: var(--color-primary-darkest);
+    color: var(--color-text-dark);
   }
 
   .ferreteria-table td:last-child {
@@ -142,9 +143,9 @@
 
 /* Optional small badges for the table display */
 .horario-badge {
-  background: #f3f4f6;
+  background: var(--color-secondary-light);
   padding: 2px 6px;
   border-radius: 12px;
   font-size: 0.85rem;
-  color: #111827;
+  color: var(--color-primary);
 }

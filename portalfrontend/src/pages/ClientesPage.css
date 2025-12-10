@@ -9,9 +9,10 @@
   overflow: hidden;
   border-radius: 24px;
   padding: 36px;
-  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(255, 138, 41, 0.9) 95%);
-  color: var(--color-text-inverted);
-  box-shadow: 0 20px 48px rgba(17, 24, 39, 0.35);
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -20,14 +21,7 @@
 }
 
 .clientes-hero::after {
-  content: "";
-  position: absolute;
-  width: 260px;
-  height: 260px;
-  right: -70px;
-  top: -70px;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.4), transparent 65%);
-  transform: rotate(14deg);
+  display: none;
 }
 
 .clientes-hero .hero-content {
@@ -45,23 +39,24 @@
   gap: 6px;
   padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background-color: var(--color-primary-soft);
   font-size: 0.85rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
+  color: #000000;
 }
 
 .clientes-hero .hero-content h1 {
   margin: 0;
   font-size: 2.15rem;
   letter-spacing: -0.02em;
-  color: var(--color-text-inverted);
+  color: var(--color-text-dark);
 }
 
 .clientes-hero .hero-content p {
   margin: 0;
   max-width: 520px;
-  color: rgba(249, 250, 251, 0.85);
+  color: var(--color-text-soft);
   font-size: 1rem;
   line-height: 1.6;
 }
@@ -77,39 +72,39 @@
   min-width: 160px;
   padding: 14px 18px;
   border-radius: 18px;
-  background: rgba(17, 24, 39, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background: var(--color-secondary-light);
+  border: 1px solid var(--color-border);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .clientes-hero .metric-card--soft {
-  background: rgba(255, 138, 41, 0.28);
-  border-color: rgba(255, 255, 255, 0.35);
-  color: var(--color-primary-darkest);
+  background: var(--color-primary-soft);
+  border-color: var(--color-accent-medium);
+  color: var(--color-text-dark);
 }
 
 .clientes-hero .metric-label {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.7px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--color-text-soft);
 }
 
 .clientes-hero .metric-card--soft .metric-label {
-  color: rgba(17, 24, 39, 0.7);
+  color: var(--color-text-soft);
 }
 
 .clientes-hero .metric-value {
   font-size: 1.55rem;
   font-weight: 700;
-  color: var(--color-text-inverted);
+  color: var(--color-text-dark);
 }
 
 .clientes-hero .metric-card--soft .metric-value {
-  color: var(--color-primary-darkest);
+  color: var(--color-text-dark);
 }
 
 .clientes-content {
@@ -122,8 +117,8 @@
   background: var(--color-surface);
   border-radius: 20px;
   padding: 28px 32px;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(17, 24, 39, 0.08);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -155,7 +150,7 @@
   padding: 8px 16px;
   border-radius: 999px;
   background: var(--color-secondary-light);
-  border: 1px solid rgba(255, 138, 41, 0.25);
+  border: 1px solid var(--color-accent-medium);
   font-weight: 600;
   color: var(--color-text-dark);
 }
@@ -182,10 +177,10 @@
   align-items: center;
   gap: 10px;
   background: var(--color-surface);
-  border: 1px solid rgba(17, 24, 39, 0.12);
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 10px 14px;
-  box-shadow: inset 0 1px 2px rgba(17, 24, 39, 0.05);
+  box-shadow: inset 0 1px 2px rgba(17, 24, 39, 0.04);
   min-width: 260px;
 }
 
@@ -205,7 +200,7 @@
 
 .clientes-table-card {
   border-radius: 18px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
+  border: 1px solid var(--color-border);
   background: var(--color-surface);
   box-shadow: var(--shadow-md);
   overflow: hidden;
@@ -232,13 +227,13 @@
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #475569;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  color: var(--color-text-soft);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .clientes-table td {
   padding: 18px 20px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
   color: var(--color-text-dark);
   background: var(--color-surface);
@@ -249,7 +244,7 @@
 }
 
 .clientes-table tbody tr:hover {
-  background: rgba(255, 138, 41, 0.08);
+  background: var(--color-primary-soft);
 }
 
 .cell-title {
@@ -269,7 +264,7 @@
 .mono-cell {
   font-family: 'Fira Code', 'Courier New', monospace;
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--color-text-soft);
 }
 
 .clientes-table .tag {
@@ -284,19 +279,19 @@
 }
 
 .clientes-table .tag--accent {
-  background: rgba(255, 138, 41, 0.18);
-  color: #b45309;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .clientes-table .tag--neutral {
-  background: rgba(17, 24, 39, 0.08);
-  color: #1f2937;
+  background: var(--color-secondary-light);
+  color: var(--color-text-dark);
 }
 
 .clientes-empty-state {
   text-align: center;
-  background: var(--color-secondary-light);
-  border: 2px dashed rgba(255, 138, 41, 0.35);
+  background: var(--color-white);
+  border: 2px dashed var(--color-accent-medium);
   border-radius: 16px;
   padding: 36px;
   color: var(--color-text-dark);
@@ -321,28 +316,20 @@
   width: 60px;
   height: 60px;
   border-radius: 16px;
-  background: rgba(255, 138, 41, 0.15);
+  background: var(--color-primary-soft);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-primary-darkest);
+  color: var(--color-primary);
 }
 
 /* Skeletons */
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: #e2e8f0;
+  background: var(--color-secondary-light);
   border-radius: 14px;
-}
-
-.skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
-  transform: translateX(-100%);
-  animation: shimmer 1.2s infinite;
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 .skeleton-badge {
@@ -393,9 +380,12 @@
   border-radius: 14px;
 }
 
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
@@ -453,7 +443,7 @@
 
   .clientes-table tr {
     margin-bottom: 16px;
-    border: 1px solid rgba(17, 24, 39, 0.08);
+    border: 1px solid var(--color-border);
     border-radius: 14px;
     box-shadow: var(--shadow-sm);
     padding: 12px;

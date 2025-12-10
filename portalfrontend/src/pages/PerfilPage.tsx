@@ -290,22 +290,29 @@ const PerfilPage: React.FC = () => {
             )}
           </div>
           <div className="card-body">
-            <div className="form-group">
-              <label>Nombre:</label>
-              {isEditingUser ? (
-                <input type="text" name="nombre" value={editedUser.nombre || ''} onChange={handleUserChange} />
-              ) : (
-                <span>{userData.nombre}</span>
-              )}
-            </div>
-            <div className="form-group">
-              <label>Email:</label>
-              {isEditingUser ? (
-                <input type="email" name="email" value={editedUser.email || ''} onChange={handleUserChange} />
-              ) : (
-                <span>{userData.email}</span>
-              )}
-            </div>
+            {isEditingUser ? (
+              <>
+                <div className="form-group">
+                  <label>Nombre:</label>
+                  <input type="text" name="nombre" value={editedUser.nombre || ''} onChange={handleUserChange} />
+                </div>
+                <div className="form-group">
+                  <label>Email:</label>
+                  <input type="email" name="email" value={editedUser.email || ''} onChange={handleUserChange} />
+                </div>
+              </>
+            ) : (
+              <div className="info-grid compact">
+                <div className="info-item">
+                  <span className="info-label">Nombre</span>
+                  <span className="info-value">{userData.nombre}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Email</span>
+                  <span className="info-value">{userData.email}</span>
+                </div>
+              </div>
+            )}
             {isEditingUser && (
               <div className="edit-actions">
                 <button onClick={handleSaveUser} className="button-primary">Guardar</button>
@@ -339,103 +346,108 @@ const PerfilPage: React.FC = () => {
               )}
             </div>
             <div className="card-body">
-              <div className="form-group">
-                <label>Razón Social:</label>
-                {isEditingFerreteria ? (
-                  <input type="text" name="razon_social" value={editedFerreteria.razon_social || ''} onChange={handleFerreteriaChange} />
-                ) : (
-                  <span>{ferreteriaData.razon_social}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label>RUT:</label>
-                {isEditingFerreteria ? (
-                  <input type="text" name="rut" value={editedFerreteria.rut || ''} onChange={handleFerreteriaChange} />
-                ) : (
-                  <span>{ferreteriaData.rut}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Dirección:</label>
-                {isEditingFerreteria ? (
-                  <input type="text" name="direccion" value={editedFerreteria.direccion || ''} onChange={handleFerreteriaChange} />
-                ) : (
-                  <span>{ferreteriaData.direccion}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Teléfono:</label>
-                {isEditingFerreteria ? (
-                  <input type="text" name="telefono" value={editedFerreteria.telefono || ''} onChange={handleFerreteriaChange} />
-                ) : (
-                  <span>{ferreteriaData.telefono || 'N/A'}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label>API Key:</label>
-                {isEditingFerreteria ? (
-                  <input type="text" name="api_key" value={editedFerreteria.api_key || ''} onChange={handleFerreteriaChange} />
-                ) : (
-                  <span>{ferreteriaData.api_key}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Descripción:</label>
-                {isEditingFerreteria ? (
-                  <textarea name="descripcion" value={editedFerreteria.descripcion as string || ''} onChange={handleFerreteriaTextAreaChange} rows={3} />
-                ) : (
-                  <span>{ferreteriaData.descripcion || 'N/A'}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label>Horario:</label>
-                {isEditingFerreteria ? (
-                  <div className="horario-grid">
-                    {diasSemana.map((dia) => (
-                      <div className="horario-item" key={dia}>
-                        <div className="horario-day">{dia.charAt(0).toUpperCase() + dia.slice(1)}</div>
-                        <div className="horario-inputs">
-                          <div className="horario-input">
-                            <span>Apertura</span>
-                            <input
-                              type="time"
-                              value={editedHorario[dia]?.apertura || ''}
-                              onChange={(e) => handleHorarioChange(dia, 'apertura', e.target.value)}
-                            />
-                          </div>
-                          <div className="horario-input">
-                            <span>Cierre</span>
-                            <input
-                              type="time"
-                              value={editedHorario[dia]?.cierre || ''}
-                              onChange={(e) => handleHorarioChange(dia, 'cierre', e.target.value)}
-                            />
+              {isEditingFerreteria ? (
+                <>
+                  <div className="form-group">
+                    <label>Razón Social:</label>
+                    <input type="text" name="razon_social" value={editedFerreteria.razon_social || ''} onChange={handleFerreteriaChange} />
+                  </div>
+                  <div className="form-group">
+                    <label>RUT:</label>
+                    <input type="text" name="rut" value={editedFerreteria.rut || ''} onChange={handleFerreteriaChange} />
+                  </div>
+                  <div className="form-group">
+                    <label>Dirección:</label>
+                    <input type="text" name="direccion" value={editedFerreteria.direccion || ''} onChange={handleFerreteriaChange} />
+                  </div>
+                  <div className="form-group">
+                    <label>Teléfono:</label>
+                    <input type="text" name="telefono" value={editedFerreteria.telefono || ''} onChange={handleFerreteriaChange} />
+                  </div>
+                  <div className="form-group">
+                    <label>API Key:</label>
+                    <input type="text" name="api_key" value={editedFerreteria.api_key || ''} onChange={handleFerreteriaChange} />
+                  </div>
+                  <div className="form-group">
+                    <label>Descripción:</label>
+                    <textarea name="descripcion" value={editedFerreteria.descripcion as string || ''} onChange={handleFerreteriaTextAreaChange} rows={3} />
+                  </div>
+                  <div className="form-group">
+                    <label>Horario:</label>
+                    <div className="horario-grid">
+                      {diasSemana.map((dia) => (
+                        <div className="horario-item" key={dia}>
+                          <div className="horario-day">{dia.charAt(0).toUpperCase() + dia.slice(1)}</div>
+                          <div className="horario-inputs">
+                            <div className="horario-input">
+                              <span>Apertura</span>
+                              <input
+                                type="time"
+                                value={editedHorario[dia]?.apertura || ''}
+                                onChange={(e) => handleHorarioChange(dia, 'apertura', e.target.value)}
+                              />
+                            </div>
+                            <div className="horario-input">
+                              <span>Cierre</span>
+                              <input
+                                type="time"
+                                value={editedHorario[dia]?.cierre || ''}
+                                onChange={(e) => handleHorarioChange(dia, 'cierre', e.target.value)}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div>
-                    <span>{formatHorarioSummary(ferreteriaData.horario)}</span>
-                    <ul className="horario-list">
-                      {formatHorarioList(ferreteriaData.horario).map(item => (
-                        <li key={item.day}><strong>{item.day}:</strong> {item.time}</li>
                       ))}
-                    </ul>
+                    </div>
                   </div>
-                )}
-              </div>
-              {isEditingFerreteria && (
-                <div className="edit-actions">
-                  <button onClick={handleSaveFerreteria} className="button-primary">Guardar</button>
-                  <button onClick={() => {
-                    setIsEditingFerreteria(false);
-                    if (ferreteriaData) {
-                      setEditedFerreteria(ferreteriaData);
-                      setEditedHorario(normalizeHorario(ferreteriaData.horario));
-                    }
-                  }} className="button-secondary">Cancelar</button>
+                  <div className="edit-actions">
+                    <button onClick={handleSaveFerreteria} className="button-primary">Guardar</button>
+                    <button onClick={() => {
+                      setIsEditingFerreteria(false);
+                      if (ferreteriaData) {
+                        setEditedFerreteria(ferreteriaData);
+                        setEditedHorario(normalizeHorario(ferreteriaData.horario));
+                      }
+                    }} className="button-secondary">Cancelar</button>
+                  </div>
+                </>
+              ) : (
+                <div className="info-grid compact">
+                  <div className="info-item">
+                    <span className="info-label">Razón Social</span>
+                    <span className="info-value">{ferreteriaData.razon_social}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">RUT</span>
+                    <span className="info-value">{ferreteriaData.rut}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Dirección</span>
+                    <span className="info-value">{ferreteriaData.direccion}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Teléfono</span>
+                    <span className="info-value">{ferreteriaData.telefono || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">API Key</span>
+                    <span className="info-value">{ferreteriaData.api_key}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Descripción</span>
+                    <span className="info-value">{ferreteriaData.descripcion || 'N/A'}</span>
+                  </div>
+                  <div className="info-item info-span-2">
+                    <span className="info-label">Horario</span>
+                    <div className="info-value">
+                     
+                      <ul className="horario-list">
+                        {formatHorarioList(ferreteriaData.horario).map(item => (
+                          <li key={item.day}><strong>{item.day}:</strong> {item.time}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -457,16 +469,20 @@ const PerfilPage: React.FC = () => {
             <h3>Resumen de la Ferretería</h3>
           </div>
           <div className="card-body">
-            <div className="stat-item">
-              <span>Total de Productos:</span> <strong>{stats.totalProducts}</strong>
+            <div className="metrics-grid">
+              <div className="metric-card">
+                <span className="metric-label">Total de Productos</span>
+                <span className="metric-value">{stats.totalProducts}</span>
+              </div>
+              <div className="metric-card">
+                <span className="metric-label">Stock Bajo</span>
+                <span className="metric-value text-error">{stats.lowStockProducts}</span>
+              </div>
+              <div className="metric-card">
+                <span className="metric-label">Pedidos Activos</span>
+                <span className="metric-value">{stats.activeOrders}</span>
+              </div>
             </div>
-            <div className="stat-item">
-              <span>Productos en Stock Bajo:</span> <strong className="text-error">{stats.lowStockProducts}</strong>
-            </div>
-            <div className="stat-item">
-              <span>Pedidos Activos:</span> <strong>{stats.activeOrders}</strong>
-            </div>
-            {/* Puedes añadir más estadísticas aquí */}
           </div>
         </div>
 

@@ -50,13 +50,53 @@
 }
 
 .card-body {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   flex-grow: 1;
 }
 
 .personal-info .form-group,
 .ferreteria-info .form-group {
   margin-bottom: var(--spacing-md);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.info-grid.compact {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.info-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.info-item.info-span-2 {
+  grid-column: span 2;
+}
+
+.info-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--color-text-soft);
+  text-transform: uppercase;
+}
+
+.info-value {
+  color: var(--color-text-dark);
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .personal-info label,
@@ -75,7 +115,7 @@
 }
 
 .edit-button {
-  background-color: var(--color-secondary-dark);
+  background-color: #f7c13e;
   color: var(--color-white);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-md);
@@ -127,6 +167,37 @@
 
 .stats-summary .stat-item .text-error {
   color: var(--color-error);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.metric-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.metric-label {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text-dark);
 }
 
 /* Media Queries para responsividad */
