@@ -20,6 +20,7 @@ import { useNotifications } from './hooks/useNotifications';
 import NotificationContainer from './components/common/Notification';
 import SuscripcionPage from "./pages/SuscripcionPage";
 import PlanesPage from "./pages/PlanesPage";
+import AnalisisPage from "./pages/AnalisisPage";
 
 
 
@@ -156,6 +157,7 @@ function App() {
         {isFerreteria && <Route index element={<Navigate to="productos" replace />} />}
         {isFerreteria && <Route path="productos" element={<ProductosPage />} />}
         {isFerreteria && <Route path="pedidos" element={<PedidosPage />} />}
+        {isFerreteria && <Route path="analisis" element={<AnalisisPage />} />}
         {isFerreteria && <Route path="perfil" element={<PerfilPage />} />}
         {isFerreteria && <Route path="suscripcion" element={<SuscripcionPage />} />}
         {isFerreteria && <Route path="planes" element={<PlanesPage />} />} 
@@ -166,6 +168,7 @@ function App() {
         {isAdmin && <Route path="ferreterias" element={<FerreteriasPage />} />}
         {isAdmin && <Route path="categorias" element={<CategoriasPage />} />}
         {isAdmin && <Route path="clientes" element={<ClientesPage />} />}
+        {isAdmin && <Route path="analisis" element={<AnalisisPage />} />}
       </Route>
 
       <Route path="*" element={<Navigate to="/" />} />

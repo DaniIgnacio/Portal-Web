@@ -102,9 +102,30 @@ const ProductosPage: React.FC = () => {
       method = 'PUT';
     }
 
+    // Optimistic: guarda snapshot previo
+    const previous = products;
     try {
-      // Evita enviar campos calculados/relacionales
-      const { id_producto, id_ferreteria, ferreteria, ...productDataToSend } = product as unknown as Record<string, unknown>;
+      // Evita enviar campos calculados/relacionales y asegura id_categoria
+      const {
+        id_producto,
+        id_ferreteria,
+        ferreteria,
+        categoria,
+        ...rest
+      } = product as unknown as Record<string, unknown>;
+
+      const productDataToSend = {
+        ...rest,
+        id_categoria: (product as any).id_categoria ?? (product as any).categoria?.id_categoria ?? '',
+      };
+
+      // Optimistic: aplicar cambio local
+      if (method === 'POST') {
+        const tempId = `temp-${Date.now()}`;
+        setProducts((prev) => [...prev, { ...(product as any), id_producto: tempId }]);
+      } else {
+        setProducts((prev) => prev.map((p) => (p.id_producto === (product as any).id_producto ? { ...p, ...product } : p)));
+      }
 
       const response = await fetch(url, {
         method,
@@ -129,9 +150,12 @@ const ProductosPage: React.FC = () => {
           `Error al ${method === 'POST' ? 'crear' : 'actualizar'} el producto: ${(errorData as any).error || response.statusText}`,
           'error'
         );
+        // Rollback
+        setProducts(previous);
       }
     } catch {
       addNotification('Error de red al guardar el producto.', 'error');
+      setProducts(previous);
     }
     closeModal();
   };
@@ -145,6 +169,9 @@ const ProductosPage: React.FC = () => {
     if (!productToDelete) return;
 
     const headers = getAuthHeaders();
+    const previous = products;
+    // Optimistic remove
+    setProducts((prev) => prev.filter((p) => p.id_producto !== productToDelete.id_producto));
     try {
       const response = await fetch(`${API_URL}/productos/${productToDelete.id_producto}`, {
         method: 'DELETE',
@@ -156,15 +183,18 @@ const ProductosPage: React.FC = () => {
         addNotification(`Producto "${productToDelete.nombre}" eliminado correctamente.`, 'success');
       } else if (response.status === 401 || response.status === 403) {
         addNotification('No autorizado para eliminar este producto. Por favor, inicia sesión de nuevo.', 'error');
+        setProducts(previous);
       } else {
         const errorData = await response.json().catch(() => ({}));
         addNotification(
           `Error al eliminar el producto: ${(errorData as any).error || response.statusText}`,
           'error'
         );
+        setProducts(previous);
       }
     } catch {
       addNotification('Error de red al eliminar el producto.', 'error');
+      setProducts(previous);
     } finally {
       setIsConfirmModalOpen(false);
       setProductToDelete(null);

@@ -34,9 +34,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isFerreteria = false, isAdmin = false
             <>
               <li><NavLink to="/dashboard/productos">Productos</NavLink></li>
               <li><NavLink to="/dashboard/pedidos">Pedidos</NavLink></li>
-              <li><NavLink to="/dashboard/perfil">Mi Perfil</NavLink></li>
+              <li><NavLink to="/dashboard/analisis">Análisis</NavLink></li>
               <li><NavLink to="/dashboard/suscripcion">Mi Suscripción</NavLink></li>
-
+              <li><NavLink to="/dashboard/perfil">Mi Perfil</NavLink></li>
             </>
           ) : (
             <>

@@ -45,6 +45,9 @@ const PedidosPage: React.FC = () => {
 
   const confirmDeletePedido = async () => {
     if (!pedidoToDelete) return;
+    const previous = pedidos;
+    // Optimistic remove
+    setPedidos((prev) => prev.filter((p) => p.id_pedido !== pedidoToDelete));
     try {
       const res = await fetch(`${API_URL}/pedidos/${pedidoToDelete}`, {
         method: 'DELETE',
@@ -53,11 +56,11 @@ const PedidosPage: React.FC = () => {
       if (!res.ok) {
         throw new Error('No se pudo eliminar el pedido');
       }
-      setPedidos((prev) => prev.filter((p) => p.id_pedido !== pedidoToDelete));
       addNotification('Pedido eliminado', 'success');
     } catch (err: any) {
       console.error('Error deleting pedido:', err);
       addNotification(err.message || 'Error al eliminar el pedido', 'error');
+      setPedidos(previous);
     } finally {
       setPedidoToDelete(null);
     }
