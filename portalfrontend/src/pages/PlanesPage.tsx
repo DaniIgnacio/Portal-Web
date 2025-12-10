@@ -19,12 +19,9 @@ export default function PlanesPage() {
   const [currentPlanCode, setCurrentPlanCode] = useState<string | null>(null);
 
   const planDescriptions: Record<string, string> = {
-    BASIC:
-      "Ideal para ferreterías pequeñas que están comenzando en el mundo digital. Lleva tus productos en línea con gestión simple.",
-    PRO:
-      "Diseñado para negocios en crecimiento que requieren mayor capacidad, más productos y soporte prioritario.",
-    PREMIUM:
-      "La solución completa para ferreterías de alto volumen. Máxima capacidad, posicionamiento destacado y todas las herramientas para liderar el mercado.",
+    BASIC: "Ideal para ferreterías pequeñas que están comenzando en el mundo digital.",
+    PRO: "Diseñado para negocios en crecimiento.",
+    PREMIUM: "La solución completa para ferreterías de alto volumen.",
   };
 
   const featureLabels: Record<string, (value: any) => string> = {
@@ -35,56 +32,79 @@ export default function PlanesPage() {
 
   useEffect(() => {
     async function loadData() {
-      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      console.log("🔵 INICIANDO LOADDATA");
 
+      // Obtener usuario desde localStorage
+      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
       const userId = savedUser?.id_usuario;
+      console.log("🟣 USER LOCAL:", savedUser);
+
       if (!userId) {
+        console.log("❌ No hay usuario en LOCALSTORAGE");
         setLoading(false);
         return;
       }
 
-      // Obtener ferretería
-      const { data: userRow } = await supabase
+      // Obtener ferretería del usuario
+      const { data: userRow, error: userErr } = await supabase
         .from("usuario")
         .select("id_ferreteria")
         .eq("id_usuario", userId)
         .maybeSingle();
+
+      console.log("🟢 USERROW BD:", userRow);
+      console.log("🟥 ERROR USERROW:", userErr);
 
       if (!userRow?.id_ferreteria) {
         setLoading(false);
         return;
       }
 
-      setIdFerreteria(userRow.id_ferreteria);
+      const ferreId = userRow.id_ferreteria;
+      setIdFerreteria(ferreId);
 
-      // Obtener plan actual
-      const { data: subData } = await supabase
+      console.log("🟦 ID FERRETERIA:", ferreId);
+      console.log("🟦 Ejecutando SELECT de suscripción…");
+
+      // SELECT CORRECTO EN SUPABASE (JOIN FORZADO)
+      const { data: subData, error } = await supabase
         .from("subscription")
-        .select("subscription_plan ( code )")
-        .eq("ferreteria_id", userRow.id_ferreteria)
+        .select(`
+          plan_id,
+          subscription_plan:subscription_plan!plan_id ( code )
+        `)
+        .eq("ferreteria_id", ferreId)
         .maybeSingle();
 
-      // Manejo seguro de subData y subscription_plan
+      console.log("🔍 SUBDATA RAW:", JSON.stringify(subData, null, 2));
+      console.error("🔴 ERROR COMPLETO SUPABASE:", JSON.stringify(error, null, 2));
+
+      // Extraer relación
+      type RelationPlan = { code?: string } | { code?: string }[] | null;
+      const relation = subData?.subscription_plan as RelationPlan;
+
+      console.log("🔬 REL RAW:", relation);
+
       let planCode: string | null = null;
 
-      if (
-        subData &&
-        Array.isArray(subData.subscription_plan) &&
-        subData.subscription_plan.length > 0
-      ) {
-        planCode = subData.subscription_plan[0].code;
+      if (relation && !Array.isArray(relation) && relation.code) {
+        planCode = relation.code.trim().toUpperCase();
+      } else if (Array.isArray(relation) && relation.length > 0 && relation[0]?.code) {
+        planCode = relation[0].code.trim().toUpperCase();
       }
 
+      console.log("🟧 PLAN CODE PROCESADO:", planCode);
       setCurrentPlanCode(planCode);
 
-
-      // Obtener la lista de planes (excepto trial)
+      // Obtener catálogo de planes
       const { data: plansDB } = await supabase
         .from("subscription_plan")
         .select("*")
         .neq("code", "trial3m");
 
+      console.log("🟪 PLANES DISPONIBLES:", plansDB);
       setPlanes(plansDB || []);
+
       setLoading(false);
     }
 
@@ -94,6 +114,7 @@ export default function PlanesPage() {
   async function handleSelectPlan(code: string) {
     if (!idFerreteria) return;
 
+    console.log("🔵 CAMBIANDO PLAN A:", code);
     setLoadingPlan(code);
 
     try {
@@ -111,15 +132,15 @@ export default function PlanesPage() {
 
       if (!res.ok) {
         alert("Error al actualizar el plan.");
-        setLoadingPlan(null);
-        return;
+      } else {
+        const normalized = code.trim().toUpperCase();
+        console.log("🟦 NUEVO PLAN:", normalized);
+        setCurrentPlanCode(normalized);
+        alert("Plan actualizado correctamente.");
       }
-
-      alert("Tu plan ha sido actualizado correctamente.");
-      setCurrentPlanCode(code);
     } catch (err) {
-      console.error(err);
-      alert("Error al procesar la solicitud.");
+      console.error("🔥 ERROR CAMBIO PLAN:", err);
+      alert("Ocurrió un error.");
     }
 
     setLoadingPlan(null);
@@ -127,86 +148,63 @@ export default function PlanesPage() {
 
   if (loading) return <p>Cargando planes...</p>;
 
+  console.log("🔻 RENDER - PLAN ACTUAL:", currentPlanCode);
+
   return (
     <div className="planes-container">
       <h2 style={{ marginBottom: "25px" }}>Elige un Plan</h2>
 
       <div className="planes-grid">
-        {planes.map((plan) => (
-          <div
-            key={plan.id}
-            className="plan-card"
-            style={{
-              border:
-                plan.code === currentPlanCode
-                  ? "2px solid #ff8a29"
-                  : "1px solid #ddd",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "scale(1.03)";
-              e.currentTarget.style.boxShadow =
-                "0 6px 18px rgba(0,0,0,0.15)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow =
-                "0 4px 12px rgba(0,0,0,0.10)";
-            }}
-          >
-            {/* Badge PLAN ACTUAL */}
-            {plan.code === currentPlanCode && (
-              <div className="plan-badge">PLAN ACTUAL</div>
-            )}
+        {planes.map((plan) => {
+          const normalizedCode = plan.code.trim().toUpperCase();
+          const isCurrent = normalizedCode === currentPlanCode;
 
-            <h3>{plan.name}</h3>
-            <p className="price">${plan.monthly_price}</p>
+          console.log(
+            `🔎 Comparando → Plan: ${normalizedCode} | Actual: ${currentPlanCode} | MATCH: ${isCurrent}`
+          );
 
-            {/* Descripción */}
-            <p className="plan-description">
-              {planDescriptions[plan.code] ||
-                "Este plan incluye beneficios exclusivos para tu negocio."}
-            </p>
+          return (
+            <div
+              key={plan.id}
+              className="plan-card"
+              style={{
+                border: isCurrent ? "2px solid #ff8a29" : "1px solid #ddd",
+              }}
+            >
+              {isCurrent && <div className="plan-badge">PLAN ACTUAL</div>}
 
-            {/* Características */}
-            <ul className="features">
-              <li>
-                 <strong>Período de protección:</strong> {plan.grace_days} días extra antes de suspensión por impago
-              </li>
+              <h3>{plan.name}</h3>
+              <p className="price">${plan.monthly_price}</p>
 
-              {Object.entries(plan.features).map(([key, value], i) => {
-                const label = featureLabels[key]?.(value);
-                if (!label) return null;
-                return <li key={i}>{label}</li>;
-              })}
-            </ul>
+              <p className="plan-description">{planDescriptions[normalizedCode]}</p>
 
-            {/* Contenedor del botón */}
-            <div className="plan-button-container">
-              <button
-                className="btn-select"
-                disabled={
-                  loadingPlan === plan.code ||
-                  plan.code === currentPlanCode
-                }
-                onClick={() => handleSelectPlan(plan.code)}
-                style={{
-                  background:
-                    plan.code === currentPlanCode ? "#ccc" : "#ff8a29",
-                  cursor:
-                    plan.code === currentPlanCode
-                      ? "not-allowed"
-                      : "pointer",
-                }}
-              >
-                {plan.code === currentPlanCode
-                  ? "Este es tu plan"
-                  : loadingPlan === plan.code
-                  ? "Procesando..."
-                  : "Seleccionar este plan"}
-              </button>
+              <ul className="features">
+                <li>
+                  <strong>Protección:</strong> {plan.grace_days} días antes de suspensión
+                </li>
+
+                {Object.entries(plan.features).map(([key, val], idx) => {
+                  const label = featureLabels[key]?.(val);
+                  return label ? <li key={idx}>{label}</li> : null;
+                })}
+              </ul>
+
+              <div className="plan-button-container">
+                <button
+                  className="btn-select"
+                  disabled={loadingPlan === plan.code || isCurrent}
+                  onClick={() => handleSelectPlan(plan.code)}
+                >
+                  {isCurrent
+                    ? "Este es tu plan"
+                    : loadingPlan === plan.code
+                    ? "Procesando…"
+                    : "Seleccionar este plan"}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

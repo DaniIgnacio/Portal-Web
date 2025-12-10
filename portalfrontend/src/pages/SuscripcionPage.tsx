@@ -1,153 +1,309 @@
 import React, { useEffect, useState } from "react";
-import "./PerfilPage.css"; // reutilizamos estilos del perfil para consistencia
 import { supabase } from "../supabaseClient";
 
-interface SubscriptionData {
-  status: string;
-  starts_at: string;
-  ends_at: string;
-  suspension_reason: string | null;
-  subscription_plan: {
-    name: string;
-    grace_days: number;
-    monthly_price: number;
-  };
-}
+type Plan = {
+  id: string;
+  code: string;
+  name: string;
+  monthly_price: number | null;
+  grace_days: number | null;
+  features: Record<string, any> | null;
+};
+
+type Subscription = {
+  id: string;
+  ferreteria_id: string;
+  plan_id: string | null;
+  status: string | null;
+  started_at?: string | null;
+  expires_at?: string | null;
+};
 
 export default function SuscripcionPage() {
-  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const userData = localStorage.getItem("user");
-  const user = userData ? JSON.parse(userData) : null;
-  const ferreteriaId = user?.id_ferreteria;
+  const [idFerreteria, setIdFerreteria] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!ferreteriaId) return;
+    (async () => {
+      console.log("🔵 SUS — INICIANDO CARGA");
 
-    const fetchSubscription = async () => {
-      setLoading(true);
+      // 1) Usuario local
+      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const userId = savedUser?.id_usuario;
+      console.log("🟣 SUS — USER LOCAL:", savedUser);
 
-      const { data, error } = await supabase
+      if (!userId) {
+        setErrorText("No existe usuario en localStorage.");
+        setLoading(false);
+        return;
+      }
+
+      // 2) Traer id_ferreteria del usuario
+      const { data: userRow, error: userErr } = await supabase
+        .from("usuario")
+        .select("id_ferreteria")
+        .eq("id_usuario", userId)
+        .maybeSingle();
+
+      console.log("🟢 SUS — USERROW BD:", userRow);
+      if (userErr) console.error("🟥 SUS — ERROR USERROW:", userErr);
+
+      const ferreId = userRow?.id_ferreteria ?? null;
+      setIdFerreteria(ferreId);
+      console.log("🟦 SUS — ID FERRETERIA:", ferreId);
+
+      if (!ferreId) {
+        setErrorText("El usuario no tiene ferretería asociada.");
+        setLoading(false);
+        return;
+      }
+
+      // 3) Traer suscripción (SIN embebidos para evitar conflicto de FKs)
+      const { data: subRow, error: subErr } = await supabase
         .from("subscription")
-        .select(`
-          status,
-          starts_at,
-          ends_at,
-          suspension_reason,
-          subscription_plan (
-            name,
-            grace_days,
-            monthly_price
-          )
-        `)
-        .eq("ferreteria_id", ferreteriaId)
-        .single();
+        .select("id, ferreteria_id, plan_id, status, started_at, expires_at")
+        .eq("ferreteria_id", ferreId)
+        .maybeSingle();
 
-        if (error) {
-        console.error("Error obteniendo suscripción:", error);
-        } else {
-        const fixedData: SubscriptionData = {
-            ...data,
-            subscription_plan: Array.isArray(data.subscription_plan)
-            ? data.subscription_plan[0]
-            : data.subscription_plan
-        };
+      console.log("🟨 SUS — SUBSCRIPTION RAW:", subRow);
+      if (subErr) {
+        console.error("🟥 SUS — ERROR SUBSCRIPTION:", subErr);
+        setErrorText("No fue posible cargar la suscripción.");
+        setLoading(false);
+        return;
+      }
 
-        setSubscription(fixedData);
-        }
+      setSubscription(subRow ?? null);
 
+      // 4) Si no hay suscripción o no tiene plan_id, mostrar estado
+      if (!subRow) {
+        console.warn("⚠️ SUS — NO HAY REGISTRO DE SUSCRIPCIÓN");
+        setPlan(null);
+        setLoading(false);
+        return;
+      }
+      if (!subRow.plan_id) {
+        console.warn("⚠️ SUS — SUSCRIPCIÓN SIN plan_id (trial o por configurar)");
+        setPlan(null);
+        setLoading(false);
+        return;
+      }
 
+      // 5) Traer PLAN por id (join en dos pasos, robusto)
+      const { data: planRow, error: planErr } = await supabase
+        .from("subscription_plan")
+        .select("id, code, name, monthly_price, grace_days, features")
+        .eq("id", subRow.plan_id)
+        .maybeSingle();
+
+      console.log("🟩 SUS — PLAN RAW:", planRow);
+      if (planErr) {
+        console.error("🟥 SUS — ERROR PLAN:", planErr);
+        setErrorText("No fue posible cargar el plan actual.");
+        setLoading(false);
+        return;
+      }
+
+      setPlan(planRow ?? null);
       setLoading(false);
-    };
+    })();
+  }, []);
 
-    fetchSubscription();
-  }, [ferreteriaId]);
+  // Helpers visuales
+  const normalizedCode = plan?.code?.trim()?.toUpperCase() ?? null;
+  const status = subscription?.status ?? null;
 
-  if (loading) return <p>Cargando suscripción...</p>;
-
-  if (!subscription)
-    return (
-      <div className="perfil-container">
-        <h2>Mi Suscripción</h2>
-        <p>No se encontró ninguna suscripción activa o registrada.</p>
-      </div>
-    );
-
-  // Cálculo de días restantes
-  const hoy = new Date();
-  const endsAt = new Date(subscription.ends_at);
-  const diferenciaMs = endsAt.getTime() - hoy.getTime();
-  const diasRestantes = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
-
-  // Colores según estado
-  const estado = subscription.status;
-  let estadoColor = "gray";
-  let mensajeEstado = "";
-
-  if (estado === "activa") {
-    estadoColor = "green";
-    mensajeEstado = `Tu suscripción está activa.`;
-  } else if (estado === "vencida") {
-    estadoColor = "orange";
-    mensajeEstado = `Tu suscripción está vencida. Estás en período de gracia (${subscription.subscription_plan.grace_days} días).`;
-  } else if (estado === "suspendida") {
-    estadoColor = "red";
-    mensajeEstado = `Tu suscripción está suspendida: ${subscription.suspension_reason || "motivo no especificado"}.`;
-  }
+  if (loading) return <p>Cargando suscripción…</p>;
 
   return (
-    <div className="perfil-container">
-      <h2>Mi Suscripción</h2>
+    <div style={{ maxWidth: 880, margin: "0 auto", padding: 16 }}>
+      <h2 style={{ marginBottom: 8 }}>Tu Suscripción</h2>
 
-      {/* Estado */}
-      <div
+      {/* Consolas de depuración visibles */}
+      <pre
         style={{
-          padding: "12px",
-          borderRadius: "8px",
-          background: estadoColor,
-          color: "white",
-          marginBottom: "20px",
+          background: "#0b1220",
+          color: "#c8d0e0",
+          padding: 12,
+          borderRadius: 8,
+          fontSize: 12,
+          overflowX: "auto",
+          marginBottom: 16,
         }}
       >
-        <strong>Estado: {estado.toUpperCase()}</strong>
-        <p>{mensajeEstado}</p>
-      </div>
+{`🔻 DEBUG
+ferreteria_id: ${idFerreteria ?? "null"}
+subscription: ${JSON.stringify(subscription, null, 2)}
+plan: ${JSON.stringify(plan, null, 2)}
+normalizedCode: ${normalizedCode ?? "null"}
+status: ${status ?? "null"}`}
+      </pre>
 
-      {/* Datos del plan */}
-      <div className="perfil-section">
-        <h3>Plan contratado</h3>
-        <p><strong>Plan:</strong> {subscription.subscription_plan.name}</p>
-        <p><strong>Precio mensual:</strong> ${subscription.subscription_plan.monthly_price}</p>
-        <p><strong>Días de gracia:</strong> {subscription.subscription_plan.grace_days} días</p>
-      </div>
-
-      {/* Fechas */}
-      <div className="perfil-section">
-        <h3>Fechas</h3>
-        <p><strong>Inicio:</strong> {new Date(subscription.starts_at).toLocaleDateString()}</p>
-        <p><strong>Fin:</strong> {new Date(subscription.ends_at).toLocaleDateString()}</p>
-
-        {diasRestantes >= 0 ? (
-          <p><strong>Días restantes:</strong> {diasRestantes} días</p>
-        ) : (
-          <p><strong>Días de retraso:</strong> {Math.abs(diasRestantes)} días</p>
-        )}
-      </div>
-
-      {/* Alerta extra si está suspendida */}
-      {estado === "suspendida" && (
+      {errorText && (
         <div
           style={{
-            marginTop: "20px",
-            padding: "15px",
-            borderRadius: "8px",
-            background: "#c62828",
-            color: "white",
-            fontWeight: "bold",
+            background: "#2b0f12",
+            border: "1px solid #5f1a21",
+            color: "#ffd4d4",
+            padding: 12,
+            borderRadius: 8,
+            marginBottom: 16,
           }}
         >
-          Esta ferretería NO aparece en mapas, búsquedas ni recibe pedidos hasta regularizar su suscripción.
+          {errorText}
+        </div>
+      )}
+
+      {/* SIN registro de subscription */}
+      {!subscription && (
+        <div
+          style={{
+            background: "#101826",
+            border: "1px solid #22324d",
+            color: "#d7e1f2",
+            padding: 16,
+            borderRadius: 12,
+          }}
+        >
+          <h3 style={{ marginTop: 0 }}>No tienes una suscripción activa</h3>
+          <p style={{ opacity: 0.9 }}>
+            Aún no se ha creado el registro en <code>subscription</code> para tu
+            ferretería. Puedes elegir un plan en la página de planes.
+          </p>
+          <a
+            href="/planes"
+            style={{
+              display: "inline-block",
+              marginTop: 8,
+              padding: "8px 14px",
+              borderRadius: 8,
+              border: "1px solid #ff8a29",
+              color: "#ff8a29",
+              textDecoration: "none",
+            }}
+          >
+            Ir a elegir un plan
+          </a>
+        </div>
+      )}
+
+      {/* Con subscription pero sin plan_id */}
+      {subscription && !subscription.plan_id && (
+        <div
+          style={{
+            background: "#101826",
+            border: "1px solid #22324d",
+            color: "#d7e1f2",
+            padding: 16,
+            borderRadius: 12,
+          }}
+        >
+          <h3 style={{ marginTop: 0 }}>Suscripción por configurar</h3>
+          <p style={{ opacity: 0.9 }}>
+            Tu suscripción no tiene un <code>plan_id</code> asociado aún. Puede ser
+            un período de prueba o una suscripción recién creada. Elige un plan
+            para activar beneficios.
+          </p>
+          <div style={{ marginTop: 8, fontSize: 14, opacity: 0.85 }}>
+            <div>
+              <strong>Estado:</strong> {status ?? "—"}
+            </div>
+          </div>
+          <a
+            href="/planes"
+            style={{
+              display: "inline-block",
+              marginTop: 12,
+              padding: "8px 14px",
+              borderRadius: 8,
+              border: "1px solid #ff8a29",
+              color: "#ff8a29",
+              textDecoration: "none",
+            }}
+          >
+            Elegir plan
+          </a>
+        </div>
+      )}
+
+      {/* Con plan asociado */}
+      {subscription && subscription.plan_id && (
+        <div
+          style={{
+            background: "#101826",
+            border: "1px solid #22324d",
+            color: "#d7e1f2",
+            padding: 16,
+            borderRadius: 12,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <h3 style={{ marginTop: 0, marginBottom: 6 }}>
+              Plan actual:{" "}
+              <span style={{ color: "#ff8a29" }}>
+                {plan?.name ?? "—"} {normalizedCode ? `(${normalizedCode})` : ""}
+              </span>
+            </h3>
+            <a
+              href="/planes"
+              style={{
+                alignSelf: "flex-start",
+                padding: "6px 12px",
+                borderRadius: 8,
+                border: "1px solid #ff8a29",
+                color: "#ff8a29",
+                textDecoration: "none",
+                fontSize: 14,
+              }}
+            >
+              Cambiar plan
+            </a>
+          </div>
+
+          <div style={{ display: "grid", gap: 10 }}>
+            <div>
+              <strong>Estado:</strong> {status ?? "—"}
+            </div>
+            <div>
+              <strong>Precio mensual:</strong>{" "}
+              {plan?.monthly_price != null ? `$${plan?.monthly_price}` : "—"}
+            </div>
+            <div>
+              <strong>Días de gracia:</strong>{" "}
+              {plan?.grace_days != null ? plan?.grace_days : "—"}
+            </div>
+          </div>
+
+          {/* Features */}
+          {plan?.features && typeof plan.features === "object" && (
+            <div style={{ marginTop: 12 }}>
+              <strong>Beneficios:</strong>
+              <ul style={{ marginTop: 8 }}>
+                {Object.entries(plan.features).map(([k, v]) => (
+                  <li key={k}>
+                    <code>{k}</code>: {String(v)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Rango de fechas si existen */}
+          {(subscription.started_at || subscription.expires_at) && (
+            <div style={{ marginTop: 10, fontSize: 14, opacity: 0.85 }}>
+              <div>
+                <strong>Inicio:</strong>{" "}
+                {subscription.started_at ? new Date(subscription.started_at).toLocaleString() : "—"}
+              </div>
+              <div>
+                <strong>Expira:</strong>{" "}
+                {subscription.expires_at ? new Date(subscription.expires_at).toLocaleString() : "—"}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
