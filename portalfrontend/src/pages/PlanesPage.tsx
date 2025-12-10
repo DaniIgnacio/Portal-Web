@@ -11,11 +11,42 @@ interface Plan {
   features: Record<string, any>;
 }
 
+/* ----------------------------------------------------------
+   FECHA CHILE → ISO REAL (sin desfase)
+---------------------------------------------------------- */
+function nowChileISO(baseDate: Date = new Date()) {
+  const chile = new Date(
+    baseDate.toLocaleString("en-US", { timeZone: "America/Santiago" })
+  );
+
+  const offset = -chile.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const hours = String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0");
+  const minutes = String(Math.abs(offset) % 60).padStart(2, "0");
+
+  return (
+    chile.getFullYear() +
+    "-" +
+    String(chile.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(chile.getDate()).padStart(2, "0") +
+    "T" +
+    String(chile.getHours()).padStart(2, "0") +
+    ":" +
+    String(chile.getMinutes()).padStart(2, "0") +
+    ":" +
+    String(chile.getSeconds()).padStart(2, "0") +
+    `${sign}${hours}:${minutes}`
+  );
+}
+
 export default function PlanesPage() {
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [idFerreteria, setIdFerreteria] = useState<string | null>(null);
+
+  const [userId, setUserId] = useState<string | null>(null);
+  const [ferreteriaId, setFerreteriaId] = useState<string | null>(null);
   const [currentPlanCode, setCurrentPlanCode] = useState<string | null>(null);
 
   const planDescriptions: Record<string, string> = {
@@ -32,123 +63,129 @@ export default function PlanesPage() {
 
   useEffect(() => {
     async function loadData() {
-      console.log("🔵 INICIANDO LOADDATA");
+      try {
+        console.log("🔵 INICIANDO LOADDATA (sin localStorage)");
 
-      // Obtener usuario desde localStorage
-      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const userId = savedUser?.id_usuario;
-      console.log("🟣 USER LOCAL:", savedUser);
+        // 0) Usuario autenticado
+        const { data: userData, error: userErr } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+        const authUser = userData?.user ?? null;
 
-      if (!userId) {
-        console.log("❌ No hay usuario en LOCALSTORAGE");
+        if (!authUser?.id) {
+          setLoading(false);
+          return;
+        }
+
+        setUserId(authUser.id);
+
+        // 1) Ferretería del usuario
+        const { data: userRow, error: userRowErr } = await supabase
+          .from("usuario")
+          .select("id_ferreteria")
+          .eq("id_usuario", authUser.id)
+          .single();
+
+        if (userRowErr) throw userRowErr;
+        if (!userRow?.id_ferreteria) {
+          setLoading(false);
+          return;
+        }
+
+        const ferreId = userRow.id_ferreteria as string;
+        setFerreteriaId(ferreId);
+
+        // 2) Suscripción actual (última)
+        const { data: subRows, error: subErr } = await supabase
+          .from("ferreteria_subscription")
+          .select("plan_id")
+          .eq("ferreteria_id", ferreId)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (subErr) throw subErr;
+
+        const sub = Array.isArray(subRows) && subRows.length > 0 ? subRows[0] : null;
+        let planCode: string | null = null;
+
+        if (sub?.plan_id) {
+          const { data: planRow, error: planErr } = await supabase
+            .from("subscription_plan")
+            .select("code")
+            .eq("id", sub.plan_id)
+            .single();
+          if (planErr) throw planErr;
+          planCode = planRow?.code?.trim()?.toUpperCase() ?? null;
+        }
+
+        setCurrentPlanCode(planCode);
+
+        // 3) Catálogo de planes
+        const { data: plansDB, error: plansErr } = await supabase
+          .from("subscription_plan")
+          .select("*")
+          .neq("code", "trial3m");
+
+        if (plansErr) throw plansErr;
+
+        setPlanes(plansDB || []);
         setLoading(false);
-        return;
-      }
-
-      // Obtener ferretería del usuario
-      const { data: userRow, error: userErr } = await supabase
-        .from("usuario")
-        .select("id_ferreteria")
-        .eq("id_usuario", userId)
-        .maybeSingle();
-
-      console.log("🟢 USERROW BD:", userRow);
-      console.log("🟥 ERROR USERROW:", userErr);
-
-      if (!userRow?.id_ferreteria) {
+      } catch (e: any) {
+        console.error("❌ PLANES ERROR:", e);
         setLoading(false);
-        return;
       }
-
-      const ferreId = userRow.id_ferreteria;
-      setIdFerreteria(ferreId);
-
-      console.log("🟦 ID FERRETERIA:", ferreId);
-      console.log("🟦 Ejecutando SELECT de suscripción…");
-
-      // SELECT CORRECTO EN SUPABASE (JOIN FORZADO)
-      const { data: subData, error } = await supabase
-        .from("subscription")
-        .select(`
-          plan_id,
-          subscription_plan:subscription_plan!plan_id ( code )
-        `)
-        .eq("ferreteria_id", ferreId)
-        .maybeSingle();
-
-      console.log("🔍 SUBDATA RAW:", JSON.stringify(subData, null, 2));
-      console.error("🔴 ERROR COMPLETO SUPABASE:", JSON.stringify(error, null, 2));
-
-      // Extraer relación
-      type RelationPlan = { code?: string } | { code?: string }[] | null;
-      const relation = subData?.subscription_plan as RelationPlan;
-
-      console.log("🔬 REL RAW:", relation);
-
-      let planCode: string | null = null;
-
-      if (relation && !Array.isArray(relation) && relation.code) {
-        planCode = relation.code.trim().toUpperCase();
-      } else if (Array.isArray(relation) && relation.length > 0 && relation[0]?.code) {
-        planCode = relation[0].code.trim().toUpperCase();
-      }
-
-      console.log("🟧 PLAN CODE PROCESADO:", planCode);
-      setCurrentPlanCode(planCode);
-
-      // Obtener catálogo de planes
-      const { data: plansDB } = await supabase
-        .from("subscription_plan")
-        .select("*")
-        .neq("code", "trial3m");
-
-      console.log("🟪 PLANES DISPONIBLES:", plansDB);
-      setPlanes(plansDB || []);
-
-      setLoading(false);
     }
 
     loadData();
   }, []);
 
+  /* ----------------------------------------------------------
+     CAMBIO DE PLAN (con hora Chile corregida)
+  ---------------------------------------------------------- */
   async function handleSelectPlan(code: string) {
-    if (!idFerreteria) return;
+    if (!ferreteriaId) return;
 
     console.log("🔵 CAMBIANDO PLAN A:", code);
     setLoadingPlan(code);
 
     try {
-      const res = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/ferreteria/change-plan`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id_ferreteria: idFerreteria,
-            plan_code: code,
-          }),
-        }
+      // 1) Buscar plan por código
+      const { data: planRow, error: planErr } = await supabase
+        .from("subscription_plan")
+        .select("id, code")
+        .eq("code", code)
+        .single();
+
+      if (planErr || !planRow?.id) throw planErr || new Error("Plan no encontrado");
+
+      // 2) Crear nuevo registro con hora Chile REAL
+      const ahoraCL = nowChileISO();
+      const finCL = nowChileISO(
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       );
 
-      if (!res.ok) {
-        alert("Error al actualizar el plan.");
-      } else {
-        const normalized = code.trim().toUpperCase();
-        console.log("🟦 NUEVO PLAN:", normalized);
-        setCurrentPlanCode(normalized);
-        alert("Plan actualizado correctamente.");
-      }
+      const { error: insErr } = await supabase
+        .from("ferreteria_subscription")
+        .insert({
+          id: crypto.randomUUID(),
+          ferreteria_id: ferreteriaId,
+          plan_id: planRow.id,
+          status: "active",
+          starts_at: ahoraCL,
+          ends_at: finCL,
+        });
+
+      if (insErr) throw insErr;
+
+      const normalized = code.trim().toUpperCase();
+      setCurrentPlanCode(normalized);
     } catch (err) {
       console.error("🔥 ERROR CAMBIO PLAN:", err);
-      alert("Ocurrió un error.");
+    } finally {
+      setLoadingPlan(null);
     }
-
-    setLoadingPlan(null);
   }
 
   if (loading) return <p>Cargando planes...</p>;
-
-  console.log("🔻 RENDER - PLAN ACTUAL:", currentPlanCode);
 
   return (
     <div className="planes-container">
@@ -158,10 +195,6 @@ export default function PlanesPage() {
         {planes.map((plan) => {
           const normalizedCode = plan.code.trim().toUpperCase();
           const isCurrent = normalizedCode === currentPlanCode;
-
-          console.log(
-            `🔎 Comparando → Plan: ${normalizedCode} | Actual: ${currentPlanCode} | MATCH: ${isCurrent}`
-          );
 
           return (
             <div
@@ -175,15 +208,17 @@ export default function PlanesPage() {
 
               <h3>{plan.name}</h3>
               <p className="price">${plan.monthly_price}</p>
-
-              <p className="plan-description">{planDescriptions[normalizedCode]}</p>
+              <p className="plan-description">
+                {planDescriptions[normalizedCode]}
+              </p>
 
               <ul className="features">
                 <li>
-                  <strong>Protección:</strong> {plan.grace_days} días antes de suspensión
+                  <strong>Protección:</strong>{" "}
+                  {plan.grace_days} días antes de suspensión
                 </li>
 
-                {Object.entries(plan.features).map(([key, val], idx) => {
+                {Object.entries(plan.features || {}).map(([key, val], idx) => {
                   const label = featureLabels[key]?.(val);
                   return label ? <li key={idx}>{label}</li> : null;
                 })}
