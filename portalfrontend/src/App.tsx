@@ -18,6 +18,11 @@ import ResetPasswordPage from './pages/ResetPasswordPage'; // Nuevo import para 
 import CompletarFerreteriaPage from './pages/CompletarFerreteriaPage';
 import { useNotifications } from './hooks/useNotifications';
 import NotificationContainer from './components/common/Notification';
+import SuscripcionPage from "./pages/SuscripcionPage";
+import PlanesPage from "./pages/PlanesPage";
+
+
+
 
 import './App.css';
 
@@ -29,6 +34,8 @@ function App() {
   const [isFerreteria, setIsFerreteria] = useState<boolean>(false); // Detecta si el usuario es ferretería
   const [isAdmin, setIsAdmin] = useState<boolean>(false); // Detecta si el usuario es admin
   const navigate = useNavigate();
+  const [subscription, setSubscription] = useState<any | null>(null);
+
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -59,6 +66,22 @@ function App() {
       setIsAdmin(false);
     }
   };
+    const loadSubscription = async (id_ferreteria: string) => {
+    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/suscripcion/get`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_ferreteria }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      setSubscription(data);
+    } else {
+      setSubscription(null);
+    }
+  };
+
+
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -84,6 +107,10 @@ function App() {
       navigate('/dashboard');
       addNotification('¡Inicio de sesión exitoso!', 'success');
     }
+    if (user.id_ferreteria) {
+    loadSubscription(user.id_ferreteria);
+  }
+
   };
 
   if (loading) {
@@ -117,13 +144,23 @@ function App() {
 
       <Route
         path="/dashboard"
-        element={isAuthenticated ? <DashboardLayout onLogout={handleLogout} userName={userName} isFerreteria={isFerreteria} isAdmin={isAdmin} /> : <Navigate to="/login" />}
+        element={isAuthenticated ? <DashboardLayout 
+          onLogout={handleLogout} 
+          userName={userName} 
+          isFerreteria={isFerreteria} 
+          isAdmin={isAdmin} 
+          subscription={subscription}
+          /> : <Navigate to="/login" />}
       >
         {/* Rutas para ferretería */}
         {isFerreteria && <Route index element={<Navigate to="productos" replace />} />}
         {isFerreteria && <Route path="productos" element={<ProductosPage />} />}
         {isFerreteria && <Route path="pedidos" element={<PedidosPage />} />}
         {isFerreteria && <Route path="perfil" element={<PerfilPage />} />}
+        {isFerreteria && <Route path="suscripcion" element={<SuscripcionPage />} />}
+        {isFerreteria && <Route path="planes" element={<PlanesPage />} />} 
+
+        
         {/* Rutas para admin */}
         {isAdmin && <Route index element={<Navigate to="ferreterias" replace />} />}
         {isAdmin && <Route path="ferreterias" element={<FerreteriasPage />} />}

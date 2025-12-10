@@ -1,158 +1,284 @@
-import { Router } from 'express';
-import { supabase } from '../supabase';
+import express from "express";
+import { supabase } from "../supabase";
 
-const router = Router();
+const router = express.Router();
 
-// GET: Obtener todas las ferreterías
-router.get('/ferreterias', async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('ferreteria')
-            .select('*')
-            .order('razon_social');
+/* ============================================
+   🔶 1) Crear ferretería (normal)
+   ============================================ */
+router.post("/create", async (req, res) => {
+  try {
+    const {
+      rut,
+      razon_social,
+      direccion,
+      latitud,
+      longitud,
+      telefono,
+      api_key,
+      descripcion,
+      horario,
+    } = req.body;
 
-        if (error) {
-            console.error('Error de Supabase:', error);
-            return res.status(500).json({ error: error.message });
-        }
-        res.json(data);
-    } catch (error) {
-        console.error('Error al obtener ferreterías:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+    const parsedHorario = horario ? JSON.stringify(horario) : null;
+
+    // Crear ferretería
+    const { data: newFerreteriaData, error: insertFerreteriaError } =
+      await supabase
+        .from("ferreteria")
+        .insert([
+          {
+            rut,
+            razon_social,
+            direccion,
+            latitud: latitud ? parseFloat(latitud) : null,
+            longitud: longitud ? parseFloat(longitud) : null,
+            telefono: telefono || null,
+            api_key,
+            descripcion: descripcion || null,
+            horario: parsedHorario || null,
+          },
+        ])
+        .select();
+
+    if (
+      insertFerreteriaError ||
+      !newFerreteriaData ||
+      newFerreteriaData.length === 0
+    ) {
+      console.error("Error al insertar ferretería:", insertFerreteriaError);
+      return res.status(500).json({
+        error:
+          insertFerreteriaError?.message || "Error al crear la ferretería.",
+      });
     }
+
+    const id_ferreteria = newFerreteriaData[0].id_ferreteria;
+
+    /* ============================================================
+       🔥 Crear suscripción Trial de 3 meses automáticamente
+       ============================================================ */
+    try {
+      const { data: trialPlan, error: trialPlanError } = await supabase
+        .from("subscription_plan")
+        .select("id")
+        .eq("code", "trial3m")
+        .maybeSingle();
+
+      if (trialPlanError) {
+        console.error("Error buscando plan trial:", trialPlanError);
+      } else if (trialPlan) {
+        const starts = new Date();
+        const ends = new Date();
+        ends.setMonth(ends.getMonth() + 3); // 3 meses de trial
+
+        const { error: subscriptionError } = await supabase
+          .from("subscription")
+          .insert({
+            ferreteria_id: id_ferreteria,
+            plan_id: trialPlan.id,
+            status: "activa",
+            is_trial: true,
+            starts_at: starts.toISOString(),
+            ends_at: ends.toISOString(),
+          });
+
+        if (subscriptionError) {
+          console.error("Error creando trial:", subscriptionError);
+        } else {
+          console.log(
+            "Trial de 3 meses creado correctamente para ferretería:",
+            id_ferreteria
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Error inesperado creando trial:", err);
+    }
+
+    return res.json({
+      message: "Ferretería creada exitosamente.",
+      ferreteria: newFerreteriaData[0],
+    });
+  } catch (error) {
+    console.error("Error general:", error);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
 });
 
-// GET: Obtener una ferretería por ID
-router.get('/ferreterias/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
+/* ============================================
+   🔶 2) Crear ferretería desde link-ferretería
+   ============================================ */
+router.post("/link-ferreteria", async (req, res) => {
+  try {
+    const {
+      rut,
+      razon_social,
+      direccion,
+      latitud,
+      longitud,
+      telefono,
+      api_key,
+      descripcion,
+      horario,
+    } = req.body;
 
-        const { data, error } = await supabase
-            .from('ferreteria')
-            .select('*')
-            .eq('id_ferreteria', id)
-            .single();
+    const parsedHorario = horario ? JSON.stringify(horario) : null;
 
-        if (error || !data) {
-            console.error('Error de Supabase al obtener ferretería por ID:', error);
-            return res.status(404).json({ error: 'Ferretería no encontrada' });
-        }
+    const { data: newFerreteriaData, error: insertFerreteriaError } =
+      await supabase
+        .from("ferreteria")
+        .insert([
+          {
+            rut,
+            razon_social,
+            direccion,
+            latitud: latitud ? parseFloat(latitud) : null,
+            longitud: longitud ? parseFloat(longitud) : null,
+            telefono: telefono || null,
+            api_key,
+            descripcion: descripcion || null,
+            horario: parsedHorario || null,
+          },
+        ])
+        .select();
 
-        res.json(data);
-    } catch (error) {
-        console.error('Error al obtener la ferretería:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+    if (
+      insertFerreteriaError ||
+      !newFerreteriaData ||
+      newFerreteriaData.length === 0
+    ) {
+      console.error(
+        "Error al insertar ferretería desde link-ferreteria:",
+        insertFerreteriaError
+      );
+      return res.status(500).json({
+        error:
+          insertFerreteriaError?.message ||
+          "Error al crear la ferretería desde link.",
+      });
     }
+
+    const id_ferreteria = newFerreteriaData[0].id_ferreteria;
+
+    /* ============================================================
+       🔥 Trial automático aquí también
+       ============================================================ */
+    try {
+      const { data: trialPlan } = await supabase
+        .from("subscription_plan")
+        .select("id")
+        .eq("code", "trial3m")
+        .maybeSingle();
+
+      if (trialPlan) {
+        const starts = new Date();
+        const ends = new Date();
+        ends.setMonth(ends.getMonth() + 3);
+
+        await supabase.from("subscription").insert({
+          ferreteria_id: id_ferreteria,
+          plan_id: trialPlan.id,
+          status: "activa",
+          is_trial: true,
+          starts_at: starts.toISOString(),
+          ends_at: ends.toISOString(),
+        });
+
+        console.log(
+          "Trial creado correctamente (link-ferreteria) para:",
+          id_ferreteria
+        );
+      }
+    } catch (err) {
+      console.error("Error creando trial en link-ferreteria:", err);
+    }
+
+    return res.json({
+      message: "Ferretería creada correctamente.",
+      ferreteria: newFerreteriaData[0],
+    });
+  } catch (error) {
+    console.error("Error general:", error);
+    return res.status(500).json({ error: "Error interno del servidor." });
+  }
 });
 
-// GET: Obtener una ferretería por ID
-router.get('/ferreterias/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { data, error } = await supabase
-            .from('ferreteria')
-            .select('*')
-            .eq('id_ferreteria', id)
-            .single();
+// Cambiar plan de suscripción
+router.post("/change-plan", async (req, res) => {
+  try {
+    const { id_ferreteria, plan_code } = req.body;
 
-        if (error) {
-            console.error('Error de Supabase al obtener ferretería por ID:', error);
-            return res.status(500).json({ error: error.message });
-        }
-
-        if (!data) {
-            return res.status(404).json({ error: 'Ferretería no encontrada' });
-        }
-
-        res.json(data);
-    } catch (error) {
-        console.error('Error al obtener ferretería por ID:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+    if (!id_ferreteria || !plan_code) {
+      return res.status(400).json({ error: "Datos incompletos" });
     }
+
+    // 1. Buscar plan solicitado
+    const { data: planData, error: planError } = await supabase
+      .from("subscription_plan")
+      .select("id")
+      .eq("code", plan_code)
+      .single();
+
+    if (planError || !planData) {
+      return res.status(400).json({ error: "El plan solicitado no existe." });
+    }
+
+    // 2. Verificar si ya tiene suscripción
+    const { data: currentSub, error: findError } = await supabase
+      .from("subscription")
+      .select("*")
+      .eq("ferreteria_id", id_ferreteria)
+      .maybeSingle();
+
+    if (findError) {
+      return res.status(500).json({ error: findError.message });
+    }
+
+    let updateError;
+
+    if (currentSub) {
+      // 👉 NO TOCAMOS starts_at ni ends_at (son DATE)
+      const { error } = await supabase
+        .from("subscription")
+        .update({
+          plan_id: planData.id,
+          status: "active",
+          is_trial: false,
+        })
+        .eq("ferreteria_id", id_ferreteria);
+
+      updateError = error;
+    } else {
+      // 👉 Crear nueva suscripción con fechas correctas en formato DATE
+      const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+      const { error } = await supabase.from("subscription").insert({
+        ferreteria_id: id_ferreteria,
+        plan_id: planData.id,
+        status: "active",
+        is_trial: false,
+        starts_at: today,
+        ends_at: today,
+      });
+
+      updateError = error;
+    }
+
+    if (updateError) {
+      return res.status(500).json({ error: updateError.message });
+    }
+
+    return res.json({
+      ok: true,
+      message: "Plan cambiado correctamente.",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Error interno en cambio de plan." });
+  }
 });
 
-// POST: Crear una nueva ferretería
-router.post('/ferreterias', async (req, res) => {
-    try {
-        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario } = req.body;
 
-        if (!rut || !razon_social || !direccion) {
-            return res.status(400).json({
-                error: 'RUT, razón social y dirección son requeridos'
-            });
-        }
-
-        const { data, error } = await supabase
-            .from('ferreteria')
-            .insert([{ rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario }])
-            .select();
-
-        if (error) {
-            console.error('Error detallado de Supabase:', JSON.stringify(error, null, 2));
-            return res.status(500).json({ error: error.message });
-        }
-
-        res.status(201).json(data[0]);
-    } catch (error) {
-        console.error('Error al crear ferretería:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
-// PUT: Actualizar una ferretería existente
-router.put('/ferreterias/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario } = req.body;
-
-        if (!rut || !razon_social || !direccion) {
-            return res.status(400).json({
-                error: 'RUT, razón social y dirección son requeridos'
-            });
-        }
-
-        const { data, error } = await supabase
-            .from('ferreteria')
-            .update({ rut, razon_social, direccion, latitud, longitud, telefono, api_key, descripcion, horario })
-            .eq('id_ferreteria', id)
-            .select();
-
-        if (error) {
-            console.error('Error de Supabase al actualizar:', error);
-            return res.status(500).json({ error: error.message });
-        }
-
-        if (!data || data.length === 0) {
-            return res.status(404).json({ error: 'Ferretería no encontrada' });
-        }
-
-        res.json(data[0]);
-    } catch (error) {
-        console.error('Error al actualizar ferretería:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
-// DELETE: Eliminar una ferretería
-router.delete('/ferreterias/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const { error } = await supabase
-            .from('ferreteria')
-            .delete()
-            .eq('id_ferreteria', id);
-
-        if (error) {
-            console.error('Error de Supabase al eliminar:', error);
-            return res.status(500).json({ error: error.message });
-        }
-
-        res.status(204).send();
-    } catch (error) {
-        console.error('Error al eliminar ferretería:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
 
 export default router;
