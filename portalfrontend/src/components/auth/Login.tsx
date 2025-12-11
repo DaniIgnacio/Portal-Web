@@ -8,7 +8,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
 
 const GEOFERRE_LOGO_URL =
-  'https://bhlsmetxwtqypdyxcmyk.supabase.co/storage/v1/object/sign/img/760568fe-1610-467f-8fee-8e964131647a.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jOTYxYjljOS1mOWZmLTQzZDUtYWIzNS1iOWVmYTI4ODhlOWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvNzYwNTY4ZmUtMTYxMC00NjdmLThmZWUtOGU5NjQxMzE2NDdhLmpwZyIsImlhdCI6MTc2NTMzMTYwNiwiZXhwIjoxNzk2ODY3NjA2fQ.ubjRS4NKqD8rrlQPv246aaFuB3_wwgNAzhP8DjIzVZs';
+  'https://bhlsmetxwtqypdyxcmyk.supabase.co/storage/v1/object/sign/img/geo.PNG?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jOTYxYjljOS1mOWZmLTQzZDUtYWIzNS1iOWVmYTI4ODhlOWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvZ2VvLlBORyIsImlhdCI6MTc2NTQyMjc5OCwiZXhwIjoxNzk2OTU4Nzk4fQ.EHF9bKEzSj9uPxILyyPB2jOC-U-DL4Nm_gmXyxW3cAs';
 const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="20"

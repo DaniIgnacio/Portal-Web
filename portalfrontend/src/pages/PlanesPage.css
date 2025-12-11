@@ -30,7 +30,7 @@
   font-size: 22px;
   font-weight: bold;
   margin-bottom: 12px;
-  color: #ff8a29;
+  color: var(--color-primary);
 }
 
 .features {
@@ -42,9 +42,9 @@
 }
 
 .btn-select {
-  background: #ff8a29;
+  background: var(--color-primary);
   border: none;
-  color: white;
+  color: var(--color-white);
   padding: 12px;
   border-radius: 8px;
   width: 100%;
@@ -53,7 +53,7 @@
 }
 
 .btn-select:hover {
-  background: #ff6e00;
+  background: var(--color-primary-strong);
 }
 .plan-card:hover {
   transform: translateY(-4px);
@@ -79,8 +79,8 @@
 }
 
 .plan-badge {
-  background: #ff8a29;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-white);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.8em;

@@ -168,7 +168,9 @@ export default function PlanesPage() {
               key={plan.id}
               className="plan-card"
               style={{
-                border: isCurrent ? "2px solid #ff8a29" : "1px solid #ddd",
+                border: isCurrent
+                  ? "2px solid var(--color-primary)"
+                  : "1px solid var(--color-border)",
               }}
             >
               {isCurrent && <div className="plan-badge">PLAN ACTUAL</div>}

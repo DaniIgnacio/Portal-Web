@@ -161,9 +161,9 @@ status: ${status ?? "null"}`}
       {!subscription && (
         <div
           style={{
-            background: "#101826",
-            border: "1px solid #22324d",
-            color: "#d7e1f2",
+            background: "var(--color-primary-soft)",
+            border: "1px solid var(--color-border)",
+            color: "var(--color-text-dark)",
             padding: 16,
             borderRadius: 12,
           }}
@@ -180,8 +180,8 @@ status: ${status ?? "null"}`}
               marginTop: 8,
               padding: "8px 14px",
               borderRadius: 8,
-              border: "1px solid #ff8a29",
-              color: "#ff8a29",
+              border: "1px solid var(--color-primary)",
+              color: "var(--color-primary)",
               textDecoration: "none",
             }}
           >
@@ -194,9 +194,9 @@ status: ${status ?? "null"}`}
       {subscription && !subscription.plan_id && (
         <div
           style={{
-            background: "#101826",
-            border: "1px solid #22324d",
-            color: "#d7e1f2",
+            background: "var(--color-primary-soft)",
+            border: "1px solid var(--color-border)",
+            color: "var(--color-text-dark)",
             padding: 16,
             borderRadius: 12,
           }}
@@ -219,8 +219,8 @@ status: ${status ?? "null"}`}
               marginTop: 12,
               padding: "8px 14px",
               borderRadius: 8,
-              border: "1px solid #ff8a29",
-              color: "#ff8a29",
+              border: "1px solid var(--color-primary)",
+              color: "var(--color-primary)",
               textDecoration: "none",
             }}
           >
@@ -233,9 +233,9 @@ status: ${status ?? "null"}`}
       {subscription && subscription.plan_id && (
         <div
           style={{
-            background: "#101826",
-            border: "1px solid #22324d",
-            color: "#d7e1f2",
+            background: "var(--color-primary-soft)",
+            border: "1px solid var(--color-border)",
+            color: "var(--color-text-dark)",
             padding: 16,
             borderRadius: 12,
           }}
@@ -243,7 +243,7 @@ status: ${status ?? "null"}`}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <h3 style={{ marginTop: 0, marginBottom: 6 }}>
               Plan actual:{" "}
-              <span style={{ color: "#ff8a29" }}>
+              <span style={{ color: "var(--color-primary)" }}>
                 {plan?.name ?? "—"} {normalizedCode ? `(${normalizedCode})` : ""}
               </span>
             </h3>
@@ -253,8 +253,8 @@ status: ${status ?? "null"}`}
                 alignSelf: "flex-start",
                 padding: "6px 12px",
                 borderRadius: 8,
-                border: "1px solid #ff8a29",
-                color: "#ff8a29",
+                border: "1px solid var(--color-primary)",
+                color: "var(--color-primary)",
                 textDecoration: "none",
                 fontSize: 14,
               }}
