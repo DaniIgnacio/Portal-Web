@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 type Plan = {
   id: string;
   code: string;
   name: string;
-  monthly_price: number | null;
-  grace_days: number | null;
-  features: Record<string, any> | null;
+  features?: Record<string, any> | null;
 };
 
 type Subscription = {
@@ -15,155 +14,193 @@ type Subscription = {
   ferreteria_id: string;
   plan_id: string | null;
   status: string | null;
-  started_at?: string | null;
-  expires_at?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+};
+
+/* ----------------------------------------------------------
+   FECHA CHILE → ISO REAL (sin desfase)
+---------------------------------------------------------- */
+function nowChileISO(baseDate: Date = new Date()) {
+  const chile = new Date(
+    baseDate.toLocaleString("en-US", { timeZone: "America/Santiago" })
+  );
+
+  const offset = -chile.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const hours = String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0");
+  const minutes = String(Math.abs(offset) % 60).padStart(2, "0");
+
+  return (
+    chile.getFullYear() +
+    "-" +
+    String(chile.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(chile.getDate()).padStart(2, "0") +
+    "T" +
+    String(chile.getHours()).padStart(2, "0") +
+    ":" +
+    String(chile.getMinutes()).padStart(2, "0") +
+    ":" +
+    String(chile.getSeconds()).padStart(2, "0") +
+    `${sign}${hours}:${minutes}`
+  );
+}
+
+/* ----------------------------------------------------------
+   MOSTRAR FECHAS EN HORARIO CHILE (visualmente)
+---------------------------------------------------------- */
+function formatCL(dateStr?: string | null) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleString("es-CL", {
+    timeZone: "America/Santiago",
+  });
+}
+
+/* ----------------------------------------------------------
+   TRADUCCIÓN PROFESIONAL DE FEATURES
+---------------------------------------------------------- */
+const featureLabels: Record<string, (v: any) => string> = {
+  ads_boost: () => "Mayor visibilidad en anuncios",
+  max_products: (v) =>
+    `Hasta ${Number(v).toLocaleString("es-CL")} productos en catálogo`,
+  priority_support: () => "Soporte prioritario",
+  analytics: () => "Estadísticas avanzadas del negocio",
+  multiuser: () => "Acceso multiusuario",
+  extra_categories: (v) => `${v} categorías adicionales`,
 };
 
 export default function SuscripcionPage() {
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
-  const [idFerreteria, setIdFerreteria] = useState<string | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [plan, setPlan] = useState<Plan | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
 
+  const [ferreteriaId, setFerreteriaId] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
+
+  /* ----------------------------------------------------------
+     CARGA INICIAL
+  ---------------------------------------------------------- */
   useEffect(() => {
     (async () => {
-      console.log("🔵 SUS — INICIANDO CARGA");
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const authUser = userData?.user;
 
-      // 1) Usuario local
-      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const userId = savedUser?.id_usuario;
-      console.log("🟣 SUS — USER LOCAL:", savedUser);
+        if (!authUser) {
+          setErrorText("No hay sesión activa.");
+          setLoading(false);
+          return;
+        }
 
-      if (!userId) {
-        setErrorText("No existe usuario en localStorage.");
+        const { data: userRow } = await supabase
+          .from("usuario")
+          .select("id_ferreteria")
+          .eq("id_usuario", authUser.id)
+          .single();
+
+        if (!userRow?.id_ferreteria) {
+          setErrorText("Tu usuario no tiene ferretería asociada.");
+          setLoading(false);
+          return;
+        }
+
+        setFerreteriaId(userRow.id_ferreteria);
+
+        const { data: subRows } = await supabase
+          .from("ferreteria_subscription")
+          .select("*")
+          .eq("ferreteria_id", userRow.id_ferreteria)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        const sub = subRows?.[0] ?? null;
+        setSubscription(sub);
+
+        if (!sub?.plan_id) {
+          setPlan(null);
+          setLoading(false);
+          return;
+        }
+
+        const { data: planRow } = await supabase
+          .from("subscription_plan")
+          .select("*")
+          .eq("id", sub.plan_id)
+          .single();
+
+        setPlan(planRow ?? null);
         setLoading(false);
-        return;
-      }
-
-      // 2) Traer id_ferreteria del usuario
-      const { data: userRow, error: userErr } = await supabase
-        .from("usuario")
-        .select("id_ferreteria")
-        .eq("id_usuario", userId)
-        .maybeSingle();
-
-      console.log("🟢 SUS — USERROW BD:", userRow);
-      if (userErr) console.error("🟥 SUS — ERROR USERROW:", userErr);
-
-      const ferreId = userRow?.id_ferreteria ?? null;
-      setIdFerreteria(ferreId);
-      console.log("🟦 SUS — ID FERRETERIA:", ferreId);
-
-      if (!ferreId) {
-        setErrorText("El usuario no tiene ferretería asociada.");
+      } catch (err) {
+        console.error("Error:", err);
+        setErrorText("No fue posible cargar datos.");
         setLoading(false);
-        return;
       }
-
-      // 3) Traer suscripción (SIN embebidos para evitar conflicto de FKs)
-      const { data: subRow, error: subErr } = await supabase
-        .from("subscription")
-        .select("id, ferreteria_id, plan_id, status, started_at, expires_at")
-        .eq("ferreteria_id", ferreId)
-        .maybeSingle();
-
-      console.log("🟨 SUS — SUBSCRIPTION RAW:", subRow);
-      if (subErr) {
-        console.error("🟥 SUS — ERROR SUBSCRIPTION:", subErr);
-        setErrorText("No fue posible cargar la suscripción.");
-        setLoading(false);
-        return;
-      }
-
-      setSubscription(subRow ?? null);
-
-      // 4) Si no hay suscripción o no tiene plan_id, mostrar estado
-      if (!subRow) {
-        console.warn("⚠️ SUS — NO HAY REGISTRO DE SUSCRIPCIÓN");
-        setPlan(null);
-        setLoading(false);
-        return;
-      }
-      if (!subRow.plan_id) {
-        console.warn("⚠️ SUS — SUSCRIPCIÓN SIN plan_id (trial o por configurar)");
-        setPlan(null);
-        setLoading(false);
-        return;
-      }
-
-      // 5) Traer PLAN por id (join en dos pasos, robusto)
-      const { data: planRow, error: planErr } = await supabase
-        .from("subscription_plan")
-        .select("id, code, name, monthly_price, grace_days, features")
-        .eq("id", subRow.plan_id)
-        .maybeSingle();
-
-      console.log("🟩 SUS — PLAN RAW:", planRow);
-      if (planErr) {
-        console.error("🟥 SUS — ERROR PLAN:", planErr);
-        setErrorText("No fue posible cargar el plan actual.");
-        setLoading(false);
-        return;
-      }
-
-      setPlan(planRow ?? null);
-      setLoading(false);
     })();
   }, []);
 
-  // Helpers visuales
-  const normalizedCode = plan?.code?.trim()?.toUpperCase() ?? null;
-  const status = subscription?.status ?? null;
-
   if (loading) return <p>Cargando suscripción…</p>;
 
+  const normalizedCode = plan?.code?.toUpperCase() ?? null;
+
+  /* ----------------------------------------------------------
+     CÁLCULO DE DÍAS RESTANTES
+  ---------------------------------------------------------- */
+  let diasRestantes = null;
+  let porcentaje = 0;
+
+  if (subscription?.starts_at && subscription.ends_at) {
+    const inicio = new Date(subscription.starts_at);
+    const fin = new Date(subscription.ends_at);
+    const hoy = new Date();
+
+    diasRestantes = Math.ceil(
+      (fin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    const totalMs = fin.getTime() - inicio.getTime();
+    const usadoMs = hoy.getTime() - inicio.getTime();
+    porcentaje = Math.min(100, Math.max(0, (usadoMs / totalMs) * 100));
+  }
+
+  /* ----------------------------------------------------------
+     CANCELAR SUSCRIPCIÓN
+  ---------------------------------------------------------- */
+  async function cancelarSuscripcion() {
+    if (!ferreteriaId) return;
+
+    await supabase.from("ferreteria_subscription").insert({
+      ferreteria_id: ferreteriaId,
+      plan_id: subscription?.plan_id,
+      status: "canceled",
+      starts_at: nowChileISO(),
+      ends_at: nowChileISO(),
+    });
+
+    navigate(0);
+  }
+
+  /* ----------------------------------------------------------
+     UI
+  ---------------------------------------------------------- */
   return (
     <div style={{ maxWidth: 880, margin: "0 auto", padding: 16 }}>
-      <h2 style={{ marginBottom: 8 }}>Tu Suscripción</h2>
+      <h2>Tu Suscripción</h2>
 
-      {/* Consolas de depuración visibles */}
-      <pre
-        style={{
-          background: "#0b1220",
-          color: "#c8d0e0",
-          padding: 12,
-          borderRadius: 8,
-          fontSize: 12,
-          overflowX: "auto",
-          marginBottom: 16,
-        }}
-      >
-{`🔻 DEBUG
-ferreteria_id: ${idFerreteria ?? "null"}
-subscription: ${JSON.stringify(subscription, null, 2)}
-plan: ${JSON.stringify(plan, null, 2)}
-normalizedCode: ${normalizedCode ?? "null"}
-status: ${status ?? "null"}`}
-      </pre>
-
+      {/* ERROR */}
       {errorText && (
-        <div
-          style={{
-            background: "#2b0f12",
-            border: "1px solid #5f1a21",
-            color: "#ffd4d4",
-            padding: 12,
-            borderRadius: 8,
-            marginBottom: 16,
-          }}
-        >
-          {errorText}
-        </div>
+        <div style={errorBox}>{errorText}</div>
       )}
 
-      {/* SIN registro de subscription */}
+      {/* SIN SUSCRIPCIÓN */}
       {!subscription && (
         <div
           style={{
-            background: "var(--color-primary-soft)",
-            border: "1px solid var(--color-border)",
-            color: "var(--color-text-dark)",
+            background: "#101826",
+            border: "1px solid #22324d",
+            color: "#d7e1f2",
             padding: 16,
             borderRadius: 12,
           }}
@@ -180,8 +217,8 @@ status: ${status ?? "null"}`}
               marginTop: 8,
               padding: "8px 14px",
               borderRadius: 8,
-              border: "1px solid var(--color-primary)",
-              color: "var(--color-primary)",
+              border: "1px solid #ff8a29",
+              color: "#ff8a29",
               textDecoration: "none",
             }}
           >
@@ -194,9 +231,9 @@ status: ${status ?? "null"}`}
       {subscription && !subscription.plan_id && (
         <div
           style={{
-            background: "var(--color-primary-soft)",
-            border: "1px solid var(--color-border)",
-            color: "var(--color-text-dark)",
+            background: "#101826",
+            border: "1px solid #22324d",
+            color: "#d7e1f2",
             padding: 16,
             borderRadius: 12,
           }}
@@ -209,7 +246,7 @@ status: ${status ?? "null"}`}
           </p>
           <div style={{ marginTop: 8, fontSize: 14, opacity: 0.85 }}>
             <div>
-              <strong>Estado:</strong> {status ?? "—"}
+              <strong>Estado:</strong> {subscription.status ?? "—"}
             </div>
           </div>
           <a
@@ -219,8 +256,8 @@ status: ${status ?? "null"}`}
               marginTop: 12,
               padding: "8px 14px",
               borderRadius: 8,
-              border: "1px solid var(--color-primary)",
-              color: "var(--color-primary)",
+              border: "1px solid #ff8a29",
+              color: "#ff8a29",
               textDecoration: "none",
             }}
           >
@@ -229,13 +266,13 @@ status: ${status ?? "null"}`}
         </div>
       )}
 
-      {/* Con plan asociado */}
+      {/* SUSCRIPCIÓN ACTIVA */}
       {subscription && subscription.plan_id && (
         <div
           style={{
-            background: "var(--color-primary-soft)",
-            border: "1px solid var(--color-border)",
-            color: "var(--color-text-dark)",
+            background: "#101826",
+            border: "1px solid #22324d",
+            color: "#d7e1f2",
             padding: 16,
             borderRadius: 12,
           }}
@@ -243,7 +280,7 @@ status: ${status ?? "null"}`}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <h3 style={{ marginTop: 0, marginBottom: 6 }}>
               Plan actual:{" "}
-              <span style={{ color: "var(--color-primary)" }}>
+              <span style={{ color: "#ff8a29" }}>
                 {plan?.name ?? "—"} {normalizedCode ? `(${normalizedCode})` : ""}
               </span>
             </h3>
@@ -253,59 +290,88 @@ status: ${status ?? "null"}`}
                 alignSelf: "flex-start",
                 padding: "6px 12px",
                 borderRadius: 8,
-                border: "1px solid var(--color-primary)",
-                color: "var(--color-primary)",
+                border: "1px solid #ff8a29",
+                color: "#ff8a29",
                 textDecoration: "none",
                 fontSize: 14,
               }}
             >
               Cambiar plan
             </a>
-          </div>
 
-          <div style={{ display: "grid", gap: 10 }}>
-            <div>
-              <strong>Estado:</strong> {status ?? "—"}
-            </div>
-            <div>
-              <strong>Precio mensual:</strong>{" "}
-              {plan?.monthly_price != null ? `$${plan?.monthly_price}` : "—"}
-            </div>
-            <div>
-              <strong>Días de gracia:</strong>{" "}
-              {plan?.grace_days != null ? plan?.grace_days : "—"}
+            <div onClick={cancelarSuscripcion} style={btnRojo}>
+              Cancelar suscripción
             </div>
           </div>
-
-          {/* Features */}
-          {plan?.features && typeof plan.features === "object" && (
-            <div style={{ marginTop: 12 }}>
-              <strong>Beneficios:</strong>
-              <ul style={{ marginTop: 8 }}>
-                {Object.entries(plan.features).map(([k, v]) => (
-                  <li key={k}>
-                    <code>{k}</code>: {String(v)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Rango de fechas si existen */}
-          {(subscription.started_at || subscription.expires_at) && (
-            <div style={{ marginTop: 10, fontSize: 14, opacity: 0.85 }}>
-              <div>
-                <strong>Inicio:</strong>{" "}
-                {subscription.started_at ? new Date(subscription.started_at).toLocaleString() : "—"}
-              </div>
-              <div>
-                <strong>Expira:</strong>{" "}
-                {subscription.expires_at ? new Date(subscription.expires_at).toLocaleString() : "—"}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
   );
 }
+
+/* ----------------------------------------------------------
+   ESTILOS
+---------------------------------------------------------- */
+const card: React.CSSProperties = {
+  background: "#101826",
+  padding: 18,
+  borderRadius: 12,
+  color: "#d7e1f2",
+  border: "1px solid #22324d",
+};
+
+const cardPremium: React.CSSProperties = {
+  background: "linear-gradient(145deg, #0E1420, #121B2C)",
+  padding: 28,
+  borderRadius: 18,
+  border: "1px solid #1F2A3A",
+  color: "#fff",
+  boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+};
+
+const errorBox: React.CSSProperties = {
+  background: "#2b0f12",
+  border: "1px solid #5f1a21",
+  color: "#ffd4d4",
+  padding: 14,
+  borderRadius: 12,
+  marginBottom: 18,
+};
+
+const btnNaranja: React.CSSProperties = {
+  padding: "10px 16px",
+  borderRadius: 10,
+  background: "#ff8a29",
+  color: "#fff",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const btnRojo: React.CSSProperties = {
+  padding: "10px 16px",
+  borderRadius: 10,
+  background: "#EF4444",
+  color: "#fff",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const badge = (status: string | null): React.CSSProperties => ({
+  display: "inline-block",
+  padding: "5px 12px",
+  borderRadius: 8,
+  fontWeight: 700,
+  fontSize: 12,
+  marginBottom: 12,
+  background: status === "active" ? "#10B98133" : "#FBBF2433",
+  color: status === "active" ? "#10B981" : "#FBBF24",
+});
+
+const barraBase: React.CSSProperties = {
+  width: "100%",
+  height: 12,
+  background: "#1F2937",
+  borderRadius: 10,
+  overflow: "hidden",
+  marginTop: 8,
+};
