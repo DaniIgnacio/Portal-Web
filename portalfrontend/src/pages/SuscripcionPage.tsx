@@ -279,7 +279,7 @@ export default function SuscripcionPage() {
                     width: `${porcentaje}%`,
                     height: "100%",
                     background:
-                      diasRestantes <= 5 ? "#F87171" : "#ff8a29",
+                      diasRestantes <= 5 ? "#ee0000ff" : "#ff8a29",
                   }}
                 />
               </div>
