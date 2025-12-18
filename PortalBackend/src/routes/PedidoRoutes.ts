@@ -73,4 +73,69 @@ router.get('/pedidos/:id', verifyToken, async (req: any, res) => {
     }
 });
 
+// PUT: Actualizar estado del pedido (flujo simple)
+router.put('/pedidos/:id/estado', verifyToken, async (req: any, res) => {
+    const { id_ferreteria } = req.user;
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    const FLUJO_ESTADOS: Record<string, string[]> = {
+        pagado: ['preparando'],
+        preparando: ['listo_retiro'],
+        listo_retiro: ['retirado'],
+    };
+
+    if (!estado) {
+        return res.status(400).json({ error: 'Estado requerido' });
+    }
+
+    try {
+        // 1. Buscar pedido y validar pertenencia
+        const { data: pedido, error } = await supabase
+            .from('pedido')
+            .select('estado')
+            .eq('id_pedido', id)
+            .eq('id_ferreteria', id_ferreteria)
+            .single();
+
+        if (error || !pedido) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        // 2. Validar transición de estado
+        const permitidos = FLUJO_ESTADOS[pedido.estado];
+
+        if (!permitidos || !permitidos.includes(estado)) {
+            return res.status(400).json({
+                error: `No se puede cambiar de '${pedido.estado}' a '${estado}'`,
+            });
+        }
+
+        // 3. Actualizar estado
+        const { error: updateError } = await supabase
+            .from('pedido')
+            .update({
+                estado,
+                
+            })
+            .eq('id_pedido', id)
+            .eq('id_ferreteria', id_ferreteria);
+
+        if (updateError) {
+            console.error('Error actualizando estado:', updateError);
+            return res.status(500).json({ error: updateError.message });
+        }
+
+        res.json({
+            message: 'Estado del pedido actualizado correctamente',
+            estado,
+        });
+
+    } catch (err) {
+        console.error('Error interno al actualizar estado:', err);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+
 export default router;

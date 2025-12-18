@@ -1,7 +1,7 @@
 .planes-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 28px 20px 48px;
+  padding: 32px 20px 56px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -9,62 +9,51 @@
 
 .planes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
   width: 100%;
 }
 
 .plan-card {
   background: #fff;
-  padding: 26px 22px;
-  border-radius: 18px;
+  padding: 28px 24px;
+  border-radius: 16px;
   border: 1px solid var(--color-border);
-  box-shadow: 0 10px 34px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 480px;
+  min-height: 420px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  text-align: center;
+  text-align: left;
 }
 
 .plan-card.plan-current {
   border: 2px solid var(--color-primary);
-  box-shadow: 0 14px 40px rgba(0,0,0,0.12);
-}
-
-.plan-card.plan-tone-basic {
-  background: #ffffff;
-}
-
-.plan-card.plan-tone-pro {
-  background: #fef5e2;
-}
-
-.plan-card.plan-tone-premium {
-  background: #f9e2b3;
+  box-shadow: 0 14px 36px rgba(253, 183, 47, 0.16);
 }
 
 .plan-card h3 {
   margin-bottom: 10px;
+  font-size: 1.1rem;
 }
 
 .price-chip {
   display: inline-flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 6px;
   padding: 10px 14px;
   border-radius: 12px;
-  background: #fff;
+  background: #fff7e6;
   border: 1px solid var(--color-border);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.05);
-  margin: 6px 0 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  margin: 6px 0 14px;
 }
 
 .price-amount {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
-  color: var(--color-primary-darkest);
+  color: var(--color-primary);
 }
 
 .price-period {
@@ -73,21 +62,26 @@
 }
 
 .features {
-  margin-bottom: 25px;
-  flex-grow: 1; /* Ocupa espacio disponible para empujar el botón hacia abajo */
+  margin-bottom: 22px;
+  flex-grow: 1;
   list-style: none;
   padding: 0;
   display: grid;
   gap: 10px;
 }
+
 .features li {
-  margin-bottom: 6px;
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--color-text-dark);
 }
 
 .feature-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: #fff;
   border-radius: 10px;
   padding: 10px 12px;
@@ -96,15 +90,15 @@
 }
 
 .check {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--color-primary);
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
 }
 

@@ -17,7 +17,6 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'; // Nuevo import par
 import ResetPasswordPage from './pages/ResetPasswordPage'; // Nuevo import para ResetPasswordPage
 import CompletarFerreteriaPage from './pages/CompletarFerreteriaPage';
 import { useNotifications } from './hooks/useNotifications';
-import NotificationContainer from './components/common/Notification';
 import SuscripcionPage from "./pages/SuscripcionPage";
 import PlanesPage from "./pages/PlanesPage";
 import AnalisisPage from "./pages/AnalisisPage";
@@ -28,7 +27,7 @@ import AnalisisPage from "./pages/AnalisisPage";
 import './App.css';
 
 function App() {
-  const { notifications, addNotification, dismissNotification } = useNotifications();
+  const { addNotification } = useNotifications();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string | null>(null); // Nuevo estado para el nombre de usuario

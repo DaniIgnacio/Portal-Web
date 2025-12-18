@@ -7,9 +7,9 @@ type Plan = {
   id: string;
   code: string;
   name: string;
-  monthly_price: number | null;
-  grace_days: number | null;
-  features: Record<string, any> | null;
+  monthly_price?: number | null;
+  grace_days?: number | null;
+  features?: Record<string, any> | null;
 };
 
 type Subscription = {
@@ -17,142 +17,181 @@ type Subscription = {
   ferreteria_id: string;
   plan_id: string | null;
   status: string | null;
-  started_at?: string | null;
-  expires_at?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
 };
 
+/* ----------------------------------------------------------
+   FECHA CHILE → ISO REAL (sin desfase)
+---------------------------------------------------------- */
+function nowChileISO(baseDate: Date = new Date()) {
+  const chile = new Date(
+    baseDate.toLocaleString("en-US", { timeZone: "America/Santiago" })
+  );
+
+  const offset = -chile.getTimezoneOffset();
+  const sign = offset >= 0 ? "+" : "-";
+  const hours = String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0");
+  const minutes = String(Math.abs(offset) % 60).padStart(2, "0");
+
+  return (
+    chile.getFullYear() +
+    "-" +
+    String(chile.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(chile.getDate()).padStart(2, "0") +
+    "T" +
+    String(chile.getHours()).padStart(2, "0") +
+    ":" +
+    String(chile.getMinutes()).padStart(2, "0") +
+    ":" +
+    String(chile.getSeconds()).padStart(2, "0") +
+    `${sign}${hours}:${minutes}`
+  );
+}
+
+/* ----------------------------------------------------------
+   MOSTRAR FECHAS EN HORARIO CHILE (visualmente)
+---------------------------------------------------------- */
+function formatCL(dateStr?: string | null) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleString("es-CL", {
+    timeZone: "America/Santiago",
+  });
+}
+
+/* ----------------------------------------------------------
+   TRADUCCIÓN PROFESIONAL DE FEATURES
+---------------------------------------------------------- */
+const featureLabels: Record<string, (v: any) => string> = {
+  ads_boost: () => "Mayor visibilidad en anuncios",
+  max_products: (v) =>
+    `Hasta ${Number(v).toLocaleString("es-CL")} productos en catálogo`,
+  priority_support: () => "Soporte prioritario",
+  analytics: () => "Estadísticas avanzadas del negocio",
+  multiuser: () => "Acceso multiusuario",
+  extra_categories: (v) => `${v} categorías adicionales`,
+};
+
+const formatFeatureKey = (key: string) => key.replace(/_/g, " ");
+
 export default function SuscripcionPage() {
-  const [loading, setLoading] = useState(true);
-  const [idFerreteria, setIdFerreteria] = useState<string | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [plan, setPlan] = useState<Plan | null>(null);
-  const [errorText, setErrorText] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(true);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+
+  const [ferreteriaId, setFerreteriaId] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
+
+  /* ----------------------------------------------------------
+     CARGA INICIAL
+  ---------------------------------------------------------- */
   useEffect(() => {
     (async () => {
-      console.log("🔵 SUS — INICIANDO CARGA");
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const authUser = userData?.user;
 
-      // 1) Usuario local
-      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const userId = savedUser?.id_usuario;
-      console.log("🟣 SUS — USER LOCAL:", savedUser);
+        if (!authUser) {
+          setErrorText("No hay sesión activa.");
+          setLoading(false);
+          return;
+        }
 
-      if (!userId) {
-        setErrorText("No existe usuario en localStorage.");
+        const { data: userRow } = await supabase
+          .from("usuario")
+          .select("id_ferreteria")
+          .eq("id_usuario", authUser.id)
+          .single();
+
+        if (!userRow?.id_ferreteria) {
+          setErrorText("Tu usuario no tiene ferretería asociada.");
+          setLoading(false);
+          return;
+        }
+
+        setFerreteriaId(userRow.id_ferreteria);
+
+        const { data: subRows } = await supabase
+          .from("ferreteria_subscription")
+          .select("*")
+          .eq("ferreteria_id", userRow.id_ferreteria)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        const sub = subRows?.[0] ?? null;
+        setSubscription(sub);
+
+        if (!sub?.plan_id) {
+          setPlan(null);
+          setLoading(false);
+          return;
+        }
+
+        const { data: planRow } = await supabase
+          .from("subscription_plan")
+          .select("*")
+          .eq("id", sub.plan_id)
+          .single();
+
+        setPlan(planRow ?? null);
         setLoading(false);
-        return;
-      }
-
-      // 2) Traer id_ferreteria del usuario
-      const { data: userRow, error: userErr } = await supabase
-        .from("usuario")
-        .select("id_ferreteria")
-        .eq("id_usuario", userId)
-        .maybeSingle();
-
-      console.log("🟢 SUS — USERROW BD:", userRow);
-      if (userErr) console.error("🟥 SUS — ERROR USERROW:", userErr);
-
-      const ferreId = userRow?.id_ferreteria ?? null;
-      setIdFerreteria(ferreId);
-      console.log("🟦 SUS — ID FERRETERIA:", ferreId);
-
-      if (!ferreId) {
-        setErrorText("El usuario no tiene ferretería asociada.");
+      } catch (err) {
+        console.error("Error:", err);
+        setErrorText("No fue posible cargar datos.");
         setLoading(false);
-        return;
       }
-
-      // 3) Traer suscripción más reciente (ordenada) para evitar error de múltiples filas
-      const { data: subRows, error: subErr } = await supabase
-        .from("ferreteria_subscription")
-        .select("id, ferreteria_id, plan_id, status, starts_at, ends_at")
-        .eq("ferreteria_id", ferreId)
-        .order("starts_at", { ascending: false })
-        .limit(1);
-
-      const subRow = Array.isArray(subRows) && subRows.length > 0 ? subRows[0] : null;
-
-      console.log("🟨 SUS — SUBSCRIPTION RAW:", subRow);  
-      if (subErr) {
-        console.error("🟥 SUS — ERROR SUBSCRIPTION:", subErr);
-        setErrorText(`No fue posible cargar la suscripción (${subErr.message}).`);
-        setLoading(false);
-        return;
-      }
-
-      setSubscription(subRow ?? null);
-
-      // 4) Si no hay suscripción o no tiene plan_id, mostrar estado
-      if (!subRow) {
-        console.warn("⚠️ SUS — NO HAY REGISTRO DE SUSCRIPCIÓN");
-        setPlan(null);
-        setLoading(false);
-        return;
-      }
-      if (!subRow.plan_id) {
-        console.warn("⚠️ SUS — SUSCRIPCIÓN SIN plan_id (trial o por configurar)");
-        setPlan(null);
-        setLoading(false);
-        return;
-      }
-
-      // 5) Traer PLAN por id (join en dos pasos, robusto)
-      const { data: planRow, error: planErr } = await supabase
-        .from("subscription_plan")
-        .select("id, code, name, monthly_price, grace_days, features")
-        .eq("id", subRow.plan_id)
-        .maybeSingle();
-
-      console.log("🟩 SUS — PLAN RAW:", planRow);
-      if (planErr) {
-        console.error("🟥 SUS — ERROR PLAN:", planErr);
-        setErrorText("No fue posible cargar el plan actual.");
-        setLoading(false);
-        return;
-      }
-
-      setPlan(planRow ?? null);
-      setLoading(false);
     })();
   }, []);
 
-  // Helpers visuales
-  const normalizedCode = plan?.code?.trim()?.toUpperCase() ?? null;
-  const status = subscription?.status ?? null;
-
   if (loading) return <p>Cargando suscripción…</p>;
 
-  const formatFeatureKey = (key: string) => {
-    return key.replace(/_/g, " ");
-  };
+  const normalizedCode = plan?.code?.toUpperCase() ?? null;
+  const joinedDate = subscription?.starts_at ? formatCL(subscription.starts_at) : "—";
 
-  const renderFeatures = () => {
-    if (!plan?.features || typeof plan.features !== "object") return null;
-    return (
-      <ul className="suscripcion-features">
-        {Object.entries(plan.features).map(([k, v]) => (
-          <li key={k}>
-            <span className="feature-key">{formatFeatureKey(k)}</span>
-            <span className="feature-value">{String(v)}</span>
-          </li>
-        ))}
-      </ul>
+  /* ----------------------------------------------------------
+     CÁLCULO DE DÍAS RESTANTES
+  ---------------------------------------------------------- */
+  let diasRestantes = null;
+  let porcentaje = 0;
+
+  if (subscription?.starts_at && subscription.ends_at) {
+    const inicio = new Date(subscription.starts_at);
+    const fin = new Date(subscription.ends_at);
+    const hoy = new Date();
+
+    diasRestantes = Math.ceil(
+      (fin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)
     );
-  };
 
-  const formatDate = (iso?: string | null) => {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    return d.toLocaleDateString();
-  };
+    const totalMs = fin.getTime() - inicio.getTime();
+    const usadoMs = hoy.getTime() - inicio.getTime();
+    porcentaje = Math.min(100, Math.max(0, (usadoMs / totalMs) * 100));
+  }
 
-  const nextPaymentDate = subscription?.expires_at
-    ? formatDate(subscription.expires_at)
-    : "—";
-  const joinedDate = subscription?.started_at ? formatDate(subscription.started_at) : "—";
+  /* ----------------------------------------------------------
+     CANCELAR SUSCRIPCIÓN
+  ---------------------------------------------------------- */
+  async function cancelarSuscripcion() {
+    if (!ferreteriaId) return;
 
+    await supabase.from("ferreteria_subscription").insert({
+      ferreteria_id: ferreteriaId,
+      plan_id: subscription?.plan_id,
+      status: "canceled",
+      starts_at: nowChileISO(),
+      ends_at: nowChileISO(),
+    });
+
+    navigate(0);
+  }
+
+  /* ----------------------------------------------------------
+     UI
+  ---------------------------------------------------------- */
   return (
     <div className="suscripcion-page">
       <div className="suscripcion-header">
@@ -168,40 +207,13 @@ export default function SuscripcionPage() {
         </div>
       </div>
 
-      {errorText && (
-        <div className="suscripcion-alert error">
-          {errorText}
-        </div>
-      )}
+      {errorText && <div className="suscripcion-alert error">{errorText}</div>}
 
       {!subscription && (
         <div className="suscripcion-card empty">
           <div className="empty-icon">📄</div>
           <h3>No tienes una suscripción activa</h3>
-          <p>
-            Aún no se ha creado el registro en <code>subscription</code> para tu ferretería.
-            Puedes elegir un plan en la página de planes.
-          </p>
-          <button className="primary-btn" onClick={() => navigate("/dashboard/planes")}>
-            Ir a elegir un plan
-          </button>
-        </div>
-      )}
-
-      {subscription && !subscription.plan_id && (
-        <div className="suscripcion-card empty">
-          <div className="empty-icon">🕒</div>
-          <h3>Suscripción por configurar</h3>
-          <p>
-            Tu suscripción no tiene un <code>plan_id</code> asociado aún. Puede ser un período de prueba
-            o una suscripción recién creada. Elige un plan para activar beneficios.
-          </p>
-          <div className="metadata-row">
-            <div className="meta">
-              <span className="meta-label">Estado</span>
-              <span className="meta-value">{status ?? "—"}</span>
-            </div>
-          </div>
+          <p>Debes elegir un plan para comenzar.</p>
           <button className="primary-btn" onClick={() => navigate("/dashboard/planes")}>
             Elegir plan
           </button>
@@ -212,6 +224,9 @@ export default function SuscripcionPage() {
         <div className="suscripcion-card hero">
           <div className="hero-top">
             <span className="pill soft">Suscrito el {joinedDate}</span>
+            <span className={`status-badge ${subscription.status ?? 'default'}`}>
+              {subscription.status ?? 'Estado'}
+            </span>
           </div>
 
           <div className="plan-hero-head">
@@ -233,22 +248,54 @@ export default function SuscripcionPage() {
           <div className="plan-hero-meta">
             <div className="meta">
               <span className="meta-label">Estado</span>
-              <span className="meta-value">{status ?? "—"}</span>
+              <span className="meta-value">{subscription.status ?? "—"}</span>
+            </div>
+            <div className="meta">
+              <span className="meta-label">Inicio</span>
+              <span className="meta-value small">{formatCL(subscription.starts_at)}</span>
             </div>
             <div className="meta">
               <span className="meta-label">Próximo pago</span>
-              <span className="meta-value small">{nextPaymentDate}</span>
-            </div>
-            <div className="meta">
-              <span className="meta-label">Método</span>
-              <span className="meta-value small">Tarjeta ••••</span>
+              <span className="meta-value small">{formatCL(subscription.ends_at)}</span>
             </div>
           </div>
 
-          {renderFeatures()}
+          {plan?.features && (
+            <ul className="suscripcion-features">
+              {Object.entries(plan.features).map(([k, v]) => {
+                const fn = featureLabels[k];
+                const text = fn ? fn(v) : `${k}: ${v}`;
+                return (
+                  <li key={k}>
+                    <span className="check">✔</span>
+                    <div className="feature-lines">
+                      <span className="feature-key">{formatFeatureKey(k)}</span>
+                      <span className="feature-value">{text}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {diasRestantes !== null && (
+            <div className="progress-block">
+              <p className="progress-label">
+                Faltan <strong className={diasRestantes <= 5 ? "text-danger" : "text-primary"}>{diasRestantes} días</strong> para que tu plan termine.
+              </p>
+              <div className="progress-bar">
+                <div
+                  className={`progress-fill ${diasRestantes <= 5 ? "warn" : ""}`}
+                  style={{ width: `${porcentaje}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="actions-row">
-            <button className="danger-btn">Cancelar</button>
+            <button className="danger-btn" onClick={cancelarSuscripcion}>
+              Cancelar suscripción
+            </button>
           </div>
         </div>
       )}
