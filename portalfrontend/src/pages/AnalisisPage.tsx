@@ -3,6 +3,7 @@ import './AnalisisPage.css';
 import { useNotifications } from '../hooks/useNotifications';
 
 type Pedido = {
+  
   id_pedido: string;
   fecha_pedido: string;
   estado: string;
@@ -14,6 +15,7 @@ type Pedido = {
     id_producto: string;
     cantidad: number;
     precio_unitario_venta?: number;
+    nombre:string;
   }>;
 };
 
@@ -64,11 +66,17 @@ const AnalisisPage: React.FC = () => {
           fetch(`${API_URL}/cotizaciones`, { headers: getAuthHeaders() }),
           fetch(`${API_URL}/productos`, { headers: getAuthHeaders() }),
         ]);
-
+        
         if (pedidosRes.ok) {
           const data = await pedidosRes.json();
+          console.log(
+            'DETALLE REAL:',
+            data?.[0]?.detalle_pedido?.[0]
+          );
           setPedidos(Array.isArray(data) ? data : []);
         }
+        
+
         if (cotRes.ok) {
           const data = await cotRes.json();
           setCotizaciones(Array.isArray(data) ? data : []);
@@ -77,12 +85,15 @@ const AnalisisPage: React.FC = () => {
           const data = await prodRes.json();
           setProductos(Array.isArray(data) ? data : []);
         }
+
       } catch (error) {
         console.error('Error cargando datos para análisis', error);
         addNotification('No se pudieron cargar todos los datos de análisis.', 'error');
       } finally {
         setIsLoading(false);
       }
+      
+      
     };
     void fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -141,20 +152,47 @@ const AnalisisPage: React.FC = () => {
     return top;
   }, [pedidos]);
 
-  const productosMasVendidos = useMemo(() => {
-    const map = new Map<string, number>();
-    pedidos.forEach((p) => {
-      p.detalle_pedido?.forEach((d) => {
-        const prev = map.get(d.id_producto) || 0;
-        map.set(d.id_producto, prev + d.cantidad);
+
+    const productosMasVendidos = useMemo(() => {
+      const map = new Map<string, { qty: number; nombre: string }>();
+
+      pedidos.forEach((p) => {
+        p.detalle_pedido?.forEach((d) => {
+          const id = String(d.id_producto);
+          const prev = map.get(id);
+
+          // Intentar obtener nombre del detalle o del array de productos
+          let nombreProducto = (d.nombre || '').trim();
+          if (!nombreProducto) {
+            const producto = productos.find(prod => prod.id_producto === d.id_producto);
+            nombreProducto = (producto?.nombre || '').trim();
+          }
+          
+          // Si aún no hay nombre, usar ID truncado
+          if (!nombreProducto) {
+            nombreProducto = id.length > 30 ? `ID: ${id.substring(0, 30)}...` : `ID: ${id}`;
+          }
+
+          const prevName = (prev?.nombre || '').trim();
+
+          map.set(id, {
+            qty: (prev?.qty || 0) + d.cantidad,
+            nombre: prevName || nombreProducto,
+          });
+        });
       });
-    });
-    const sorted = Array.from(map.entries())
-      .map(([id, qty]) => ({ id, qty, nombre: productos.find((prod) => prod.id_producto === id)?.nombre || id }))
-      .sort((a, b) => b.qty - a.qty)
-      .slice(0, 5);
-    return sorted;
-  }, [pedidos, productos]);
+
+      return Array.from(map.entries())
+        .map(([id, v]) => ({
+          id,
+          qty: v.qty,
+          nombre: v.nombre,
+        }))
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, 5);
+    }, [pedidos, productos]);
+
+
 
   // Índice de competitividad simulado
   const competitividad = useMemo(() => {
@@ -226,6 +264,13 @@ const AnalisisPage: React.FC = () => {
     () => Math.max(...ventasSeries.map((s) => s.total), 1),
     [ventasSeries]
   );
+  const STEP = 48;
+  const BAR_WIDTH = 18;
+  const MIN_CHART_WIDTH = 360;
+
+  const chartWidth = Math.max(ventasSeries.length * STEP, MIN_CHART_WIDTH);
+  console.log('AnalisisPage render');
+
 
   return (
     <div className="analisis-page">
@@ -295,39 +340,75 @@ const AnalisisPage: React.FC = () => {
                 <div className="chart-empty">Sin ventas en el rango seleccionado.</div>
               ) : (
                 <>
-                  <svg className="chart" viewBox={`0 0 ${Math.max(ventasSeries.length * 28, 200)} 220`} preserveAspectRatio="none">
-                    {[0.25, 0.5, 0.75, 1].map((p) => (
+                  <div   className={`chart-scroll ${
+                      chartWidth <= MIN_CHART_WIDTH ? 'chart-center' : ''
+                    }`}>
+                    <svg
+                      className="chart"
+                      width={chartWidth}
+                      height={220}
+                      viewBox={`0 0 ${chartWidth} 220`}
+                      preserveAspectRatio="xMinYMin meet"
+                    >
+                      {[0.25, 0.5, 0.75, 1].map((p) => (
+                        <line
+                          key={p}
+                          x1={0}
+                          x2={chartWidth}
+                          y1={170 - 120 * p}
+                          y2={170 - 120 * p}
+                          className="chart-grid"
+                        />
+                      ))}
+
+                      {ventasSeries.map((v, idx) => {
+                        const height = ventasMax ? (v.total / ventasMax) * 120 : 0;
+                        const barWidth = 18;
+
+                        const x =
+                          ventasSeries.length === 1
+                            ? chartWidth / 2 - barWidth / 2
+                            : idx * STEP + 16;
+
+                        const y = 170 - height;
+
+                        return (
+                          <g key={`${v.label}-${idx}`}>
+                            <rect
+                              x={x}
+                              y={y}
+                              width={barWidth}
+                              height={height}
+                              rx={6}
+                              className="chart-bar"
+                            />
+                            <text
+                              x={x + barWidth / 2}
+                              y={195}
+                              className="chart-xlabel"
+                              textAnchor={ventasRange === 'month' ? 'end' : 'middle'}
+                              transform={
+                                ventasRange === 'month'
+                                  ? `rotate(-45 ${x + barWidth / 2} 195)`
+                                  : undefined
+                              }
+                            >
+                              {v.label}
+                            </text>
+                          </g>
+                        );
+                      })}
+
                       <line
-                        key={p}
                         x1={0}
-                        x2={Math.max(ventasSeries.length * 28, 200)}
-                        y1={170 - 120 * p}
-                        y2={170 - 120 * p}
-                        className="chart-grid"
+                        y1={170}
+                        x2={chartWidth}
+                        y2={170}
+                        className="chart-axis"
                       />
-                    ))}
-                    {ventasSeries.map((v, idx) => {
-                      const height = ventasMax ? (v.total / ventasMax) * 120 : 0;
-                      const step = 24;
-                      const barWidth = 2;
-                      const x = idx * step + 2;
-                      const y = 170 - height;
-                      return (
-                        <g key={`${v.label}-${idx}`}>
-                          <rect
-                            x={x}
-                            y={y}
-                            width={barWidth}
-                            height={height}
-                            rx={3}
-                            className="chart-bar"
-                          />
-                          <text x={x + barWidth / 0.2} y={190} className="chart-xlabel">{v.label}</text>
-                        </g>
-                      );
-                    })}
-                    <line x1={0} y1={170} x2={Math.max(ventasSeries.length * 24, 200)} y2={170} className="chart-axis" />
-                  </svg>
+                    </svg>
+                  </div>
+
                   <div className="chart-legend">
                     <span>Máx: {currency(Math.round(ventasMax))}</span>
                     <span>
@@ -339,6 +420,7 @@ const AnalisisPage: React.FC = () => {
                 </>
               )}
             </div>
+
           </section>
 
           <div className="metrics-grid">
@@ -443,7 +525,7 @@ const AnalisisPage: React.FC = () => {
                       <span className="badge-rank">{idx + 1}</span>
                       <div className="list-col">
                         <span className="list-title">{p.nombre}</span>
-                        <span className="list-sub">ID: {p.id}</span>
+                        
                       </div>
                       <span className="list-value">{p.qty} uds</span>
                     </div>
