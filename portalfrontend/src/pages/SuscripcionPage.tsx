@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import "./SuscripcionPage.css";
 
 type Plan = {
   id: string;
@@ -25,6 +27,7 @@ export default function SuscripcionPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     (async () => {
@@ -61,17 +64,20 @@ export default function SuscripcionPage() {
         return;
       }
 
-      // 3) Traer suscripción (SIN embebidos para evitar conflicto de FKs)
-      const { data: subRow, error: subErr } = await supabase
-        .from("subscription")
-        .select("id, ferreteria_id, plan_id, status, started_at, expires_at")
+      // 3) Traer suscripción más reciente (ordenada) para evitar error de múltiples filas
+      const { data: subRows, error: subErr } = await supabase
+        .from("ferreteria_subscription")
+        .select("id, ferreteria_id, plan_id, status, starts_at, ends_at")
         .eq("ferreteria_id", ferreId)
-        .maybeSingle();
+        .order("starts_at", { ascending: false })
+        .limit(1);
 
-      console.log("🟨 SUS — SUBSCRIPTION RAW:", subRow);
+      const subRow = Array.isArray(subRows) && subRows.length > 0 ? subRows[0] : null;
+
+      console.log("🟨 SUS — SUBSCRIPTION RAW:", subRow);  
       if (subErr) {
         console.error("🟥 SUS — ERROR SUBSCRIPTION:", subErr);
-        setErrorText("No fue posible cargar la suscripción.");
+        setErrorText(`No fue posible cargar la suscripción (${subErr.message}).`);
         setLoading(false);
         return;
       }
@@ -118,192 +124,132 @@ export default function SuscripcionPage() {
 
   if (loading) return <p>Cargando suscripción…</p>;
 
-  return (
-    <div style={{ maxWidth: 880, margin: "0 auto", padding: 16 }}>
-      <h2 style={{ marginBottom: 8 }}>Tu Suscripción</h2>
+  const formatFeatureKey = (key: string) => {
+    return key.replace(/_/g, " ");
+  };
 
-      {/* Consolas de depuración visibles */}
-      <pre
-        style={{
-          background: "#0b1220",
-          color: "#c8d0e0",
-          padding: 12,
-          borderRadius: 8,
-          fontSize: 12,
-          overflowX: "auto",
-          marginBottom: 16,
-        }}
-      >
-{`🔻 DEBUG
-ferreteria_id: ${idFerreteria ?? "null"}
-subscription: ${JSON.stringify(subscription, null, 2)}
-plan: ${JSON.stringify(plan, null, 2)}
-normalizedCode: ${normalizedCode ?? "null"}
-status: ${status ?? "null"}`}
-      </pre>
+  const renderFeatures = () => {
+    if (!plan?.features || typeof plan.features !== "object") return null;
+    return (
+      <ul className="suscripcion-features">
+        {Object.entries(plan.features).map(([k, v]) => (
+          <li key={k}>
+            <span className="feature-key">{formatFeatureKey(k)}</span>
+            <span className="feature-value">{String(v)}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleDateString();
+  };
+
+  const nextPaymentDate = subscription?.expires_at
+    ? formatDate(subscription.expires_at)
+    : "—";
+  const joinedDate = subscription?.started_at ? formatDate(subscription.started_at) : "—";
+
+  return (
+    <div className="suscripcion-page">
+      <div className="suscripcion-header">
+        <div className="suscripcion-title-block">
+          <span className="pill">Suscripción</span>
+          <h2>Tu Suscripción</h2>
+          <p>Revisa tu plan actual, estado y beneficios. Cambia de plan cuando lo necesites.</p>
+        </div>
+        <div className="suscripcion-actions">
+          <button className="ghost-btn" onClick={() => navigate("/dashboard/planes")}>
+            Cambiar plan
+          </button>
+        </div>
+      </div>
 
       {errorText && (
-        <div
-          style={{
-            background: "#2b0f12",
-            border: "1px solid #5f1a21",
-            color: "#ffd4d4",
-            padding: 12,
-            borderRadius: 8,
-            marginBottom: 16,
-          }}
-        >
+        <div className="suscripcion-alert error">
           {errorText}
         </div>
       )}
 
-      {/* SIN registro de subscription */}
       {!subscription && (
-        <div
-          style={{
-            background: "var(--color-primary-soft)",
-            border: "1px solid var(--color-border)",
-            color: "var(--color-text-dark)",
-            padding: 16,
-            borderRadius: 12,
-          }}
-        >
-          <h3 style={{ marginTop: 0 }}>No tienes una suscripción activa</h3>
-          <p style={{ opacity: 0.9 }}>
-            Aún no se ha creado el registro en <code>subscription</code> para tu
-            ferretería. Puedes elegir un plan en la página de planes.
+        <div className="suscripcion-card empty">
+          <div className="empty-icon">📄</div>
+          <h3>No tienes una suscripción activa</h3>
+          <p>
+            Aún no se ha creado el registro en <code>subscription</code> para tu ferretería.
+            Puedes elegir un plan en la página de planes.
           </p>
-          <a
-            href="/planes"
-            style={{
-              display: "inline-block",
-              marginTop: 8,
-              padding: "8px 14px",
-              borderRadius: 8,
-              border: "1px solid var(--color-primary)",
-              color: "var(--color-primary)",
-              textDecoration: "none",
-            }}
-          >
+          <button className="primary-btn" onClick={() => navigate("/dashboard/planes")}>
             Ir a elegir un plan
-          </a>
+          </button>
         </div>
       )}
 
-      {/* Con subscription pero sin plan_id */}
       {subscription && !subscription.plan_id && (
-        <div
-          style={{
-            background: "var(--color-primary-soft)",
-            border: "1px solid var(--color-border)",
-            color: "var(--color-text-dark)",
-            padding: 16,
-            borderRadius: 12,
-          }}
-        >
-          <h3 style={{ marginTop: 0 }}>Suscripción por configurar</h3>
-          <p style={{ opacity: 0.9 }}>
-            Tu suscripción no tiene un <code>plan_id</code> asociado aún. Puede ser
-            un período de prueba o una suscripción recién creada. Elige un plan
-            para activar beneficios.
+        <div className="suscripcion-card empty">
+          <div className="empty-icon">🕒</div>
+          <h3>Suscripción por configurar</h3>
+          <p>
+            Tu suscripción no tiene un <code>plan_id</code> asociado aún. Puede ser un período de prueba
+            o una suscripción recién creada. Elige un plan para activar beneficios.
           </p>
-          <div style={{ marginTop: 8, fontSize: 14, opacity: 0.85 }}>
-            <div>
-              <strong>Estado:</strong> {status ?? "—"}
+          <div className="metadata-row">
+            <div className="meta">
+              <span className="meta-label">Estado</span>
+              <span className="meta-value">{status ?? "—"}</span>
             </div>
           </div>
-          <a
-            href="/planes"
-            style={{
-              display: "inline-block",
-              marginTop: 12,
-              padding: "8px 14px",
-              borderRadius: 8,
-              border: "1px solid var(--color-primary)",
-              color: "var(--color-primary)",
-              textDecoration: "none",
-            }}
-          >
+          <button className="primary-btn" onClick={() => navigate("/dashboard/planes")}>
             Elegir plan
-          </a>
+          </button>
         </div>
       )}
 
-      {/* Con plan asociado */}
       {subscription && subscription.plan_id && (
-        <div
-          style={{
-            background: "var(--color-primary-soft)",
-            border: "1px solid var(--color-border)",
-            color: "var(--color-text-dark)",
-            padding: 16,
-            borderRadius: 12,
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <h3 style={{ marginTop: 0, marginBottom: 6 }}>
-              Plan actual:{" "}
-              <span style={{ color: "var(--color-primary)" }}>
+        <div className="suscripcion-card hero">
+          <div className="hero-top">
+            <span className="pill soft">Suscrito el {joinedDate}</span>
+          </div>
+
+          <div className="plan-hero-head">
+            <div>
+              <h3 className="plan-hero-title">
                 {plan?.name ?? "—"} {normalizedCode ? `(${normalizedCode})` : ""}
-              </span>
-            </h3>
-            <a
-              href="/planes"
-              style={{
-                alignSelf: "flex-start",
-                padding: "6px 12px",
-                borderRadius: 8,
-                border: "1px solid var(--color-primary)",
-                color: "var(--color-primary)",
-                textDecoration: "none",
-                fontSize: 14,
-              }}
-            >
-              Cambiar plan
-            </a>
-          </div>
-
-          <div style={{ display: "grid", gap: 10 }}>
-            <div>
-              <strong>Estado:</strong> {status ?? "—"}
+              </h3>
+              <p className="plan-hero-caption">Tu plan actual y próximos cobros.</p>
             </div>
-            <div>
-              <strong>Precio mensual:</strong>{" "}
-              {plan?.monthly_price != null ? `$${plan?.monthly_price}` : "—"}
-            </div>
-            <div>
-              <strong>Días de gracia:</strong>{" "}
-              {plan?.grace_days != null ? plan?.grace_days : "—"}
+            <div className="price-box accent">
+              <div className="price-label">Precio</div>
+              <div className="price-value">
+                {plan?.monthly_price != null ? `$${plan.monthly_price}` : "—"}
+              </div>
+              <div className="grace">Días de gracia: {plan?.grace_days ?? "—"}</div>
             </div>
           </div>
 
-          {/* Features */}
-          {plan?.features && typeof plan.features === "object" && (
-            <div style={{ marginTop: 12 }}>
-              <strong>Beneficios:</strong>
-              <ul style={{ marginTop: 8 }}>
-                {Object.entries(plan.features).map(([k, v]) => (
-                  <li key={k}>
-                    <code>{k}</code>: {String(v)}
-                  </li>
-                ))}
-              </ul>
+          <div className="plan-hero-meta">
+            <div className="meta">
+              <span className="meta-label">Estado</span>
+              <span className="meta-value">{status ?? "—"}</span>
             </div>
-          )}
+            <div className="meta">
+              <span className="meta-label">Próximo pago</span>
+              <span className="meta-value small">{nextPaymentDate}</span>
+            </div>
+            <div className="meta">
+              <span className="meta-label">Método</span>
+              <span className="meta-value small">Tarjeta ••••</span>
+            </div>
+          </div>
 
-          {/* Rango de fechas si existen */}
-          {(subscription.started_at || subscription.expires_at) && (
-            <div style={{ marginTop: 10, fontSize: 14, opacity: 0.85 }}>
-              <div>
-                <strong>Inicio:</strong>{" "}
-                {subscription.started_at ? new Date(subscription.started_at).toLocaleString() : "—"}
-              </div>
-              <div>
-                <strong>Expira:</strong>{" "}
-                {subscription.expires_at ? new Date(subscription.expires_at).toLocaleString() : "—"}
-              </div>
-            </div>
-          )}
+          {renderFeatures()}
+
+          <div className="actions-row">
+            <button className="danger-btn">Cancelar</button>
+          </div>
         </div>
       )}
     </div>

@@ -88,6 +88,16 @@ CREATE TABLE public.ferreteria (
   rating_count integer DEFAULT 0,
   CONSTRAINT ferreteria_pkey PRIMARY KEY (id_ferreteria)
 );
+CREATE TABLE public.ferreteria_subscription (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  ferreteria_id uuid NOT NULL,
+  plan_id uuid NOT NULL,
+  status text NOT NULL,
+  starts_at timestamp without time zone,
+  ends_at timestamp without time zone,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT ferreteria_subscription_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.pagos (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   id_pedido uuid NOT NULL,
@@ -96,6 +106,9 @@ CREATE TABLE public.pagos (
   status text NOT NULL,
   raw jsonb NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
+  amount numeric,
+  currency text,
+  gateway_ref text,
   CONSTRAINT pagos_pkey PRIMARY KEY (id),
   CONSTRAINT pagos_id_pedido_fkey FOREIGN KEY (id_pedido) REFERENCES public.pedido(id_pedido)
 );
@@ -109,6 +122,8 @@ CREATE TABLE public.pedido (
   gateway text,
   gateway_ref text,
   paid_at timestamp with time zone,
+  ticket_code text UNIQUE,
+  ticket_code_generated_at timestamp with time zone,
   CONSTRAINT pedido_pkey PRIMARY KEY (id_pedido),
   CONSTRAINT fk_pedido_ferreteria FOREIGN KEY (id_ferreteria) REFERENCES public.ferreteria(id_ferreteria),
   CONSTRAINT pedido_id_cliente_fkey FOREIGN KEY (id_cliente) REFERENCES public.cliente_app(id_cliente)
@@ -138,7 +153,7 @@ CREATE TABLE public.resenas (
   CONSTRAINT resenas_pkey PRIMARY KEY (id_resena),
   CONSTRAINT resenas_id_ferreteria_fkey FOREIGN KEY (id_ferreteria) REFERENCES public.ferreteria(id_ferreteria)
 );
-CREATE TABLE public.subscription (
+CREATE TABLE public.subscription_backup_corrupta (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   ferreteria_id uuid NOT NULL UNIQUE,
   plan_id uuid NOT NULL,
@@ -153,7 +168,7 @@ CREATE TABLE public.subscription (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   is_trial boolean NOT NULL DEFAULT false,
-  CONSTRAINT subscription_pkey PRIMARY KEY (id),
+  CONSTRAINT subscription_backup_corrupta_pkey PRIMARY KEY (id),
   CONSTRAINT subscription_ferreteria_id_fkey FOREIGN KEY (ferreteria_id) REFERENCES public.ferreteria(id_ferreteria),
   CONSTRAINT subscription_plan_fkey FOREIGN KEY (plan_id) REFERENCES public.subscription_plan(id)
 );

@@ -24,6 +24,18 @@ export default function PlanesPage() {
     PREMIUM: "La solución completa para ferreterías de alto volumen.",
   };
 
+  const planIcons: Record<string, string> = {
+    BASIC: "🧰",
+    PRO: "🚀",
+    PREMIUM: "🏆",
+  };
+
+  const planToneClass: Record<string, string> = {
+    BASIC: "plan-tone-basic",
+    PRO: "plan-tone-pro",
+    PREMIUM: "plan-tone-premium",
+  };
+
   const featureLabels: Record<string, (value: any) => string> = {
     max_products: (v) => `Hasta ${v} productos en catálogo`,
     priority_support: (v) => (v ? "Soporte prioritario 24/7" : ""),
@@ -66,7 +78,7 @@ export default function PlanesPage() {
       console.log("🟦 ID FERRETERIA:", ferreId);
       console.log("🟦 Ejecutando SELECT de suscripción…");
 
-      // SELECT CORRECTO EN SUPABASE (JOIN FORZADO)
+      // SELECT en tabla subscription
       const { data: subData, error } = await supabase
         .from("subscription")
         .select(`
@@ -166,28 +178,32 @@ export default function PlanesPage() {
           return (
             <div
               key={plan.id}
-              className="plan-card"
-              style={{
-                border: isCurrent
-                  ? "2px solid var(--color-primary)"
-                  : "1px solid var(--color-border)",
-              }}
+              className={`plan-card ${planToneClass[normalizedCode] ?? ""} ${isCurrent ? "plan-current" : ""}`}
             >
               {isCurrent && <div className="plan-badge">PLAN ACTUAL</div>}
 
+              <div className="plan-icon">{planIcons[normalizedCode] ?? "📦"}</div>
               <h3>{plan.name}</h3>
-              <p className="price">${plan.monthly_price}</p>
+              <div className="price-chip">
+                <span className="price-amount">${plan.monthly_price}</span>
+                <span className="price-period">/mes</span>
+              </div>
 
               <p className="plan-description">{planDescriptions[normalizedCode]}</p>
 
               <ul className="features">
-                <li>
-                  <strong>Protección:</strong> {plan.grace_days} días antes de suspensión
+                <li className="feature-item">
+                  <span className="check">✔</span>
+                  <span>Protección: {plan.grace_days} días antes de suspensión</span>
                 </li>
-
                 {Object.entries(plan.features).map(([key, val], idx) => {
                   const label = featureLabels[key]?.(val);
-                  return label ? <li key={idx}>{label}</li> : null;
+                  return label ? (
+                    <li key={idx} className="feature-item">
+                      <span className="check">✔</span>
+                      <span>{label}</span>
+                    </li>
+                  ) : null;
                 })}
               </ul>
 

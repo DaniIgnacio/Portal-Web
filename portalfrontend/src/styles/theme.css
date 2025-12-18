@@ -1,22 +1,22 @@
 :root {
   --color-white: #ffffff;
-  --color-primary: #506d2f; /* leaves */
-  --color-primary-strong: #3f5424;
-  --color-primary-soft: #f3ebdd; /* marble */
+  --color-primary: #fdb72f; /* Mostaza principal */
+  --color-primary-strong: #d99a12; /* Mostaza profundo */
+  --color-primary-soft: #e3e3e3; /* Reemplaza cremas por gris claro */
 
-  --color-primary-darkest: #2a2922; /* bark */
-  --color-secondary-dark: #7d5642; /* brownstone */
+  --color-primary-darkest: #2a2922; /* Texto título */
+  --color-secondary-dark: #6b5b4f; /* Texto secundario discreto */
   --color-background-light: #ffffff;
   --color-surface: #ffffff;
-  --color-secondary-light: #f3ebdd;
+  --color-secondary-light: #e3e3e3; /* Fondos suaves minimalistas */
 
   --color-text-dark: #2a2922;
   --color-text-soft: #5c5a52;
   --color-text-inverted: #ffffff;
 
-  --color-accent-medium: rgba(80, 109, 47, 0.28);
-  --color-accent-light: rgba(80, 109, 47, 0.12);
-  --color-border: #e5e0d6;
+  --color-accent-medium: rgba(253, 183, 47, 0.28);
+  --color-accent-light: rgba(253, 183, 47, 0.12);
+  --color-border: #e3e3e3;
 
   --color-success: #16a34a;
   --color-error: #dc2626;

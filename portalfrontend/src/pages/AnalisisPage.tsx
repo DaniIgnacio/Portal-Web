@@ -308,30 +308,32 @@ const AnalisisPage: React.FC = () => {
                     ))}
                     {ventasSeries.map((v, idx) => {
                       const height = ventasMax ? (v.total / ventasMax) * 120 : 0;
-                      const x = idx * 28 + 12;
+                      const step = 24;
+                      const barWidth = 2;
+                      const x = idx * step + 2;
                       const y = 170 - height;
                       return (
                         <g key={`${v.label}-${idx}`}>
                           <rect
                             x={x}
                             y={y}
-                            width={14}
+                            width={barWidth}
                             height={height}
                             rx={3}
                             className="chart-bar"
                           />
-                          <text x={x + 7} y={190} className="chart-xlabel">{v.label}</text>
+                          <text x={x + barWidth / 0.2} y={190} className="chart-xlabel">{v.label}</text>
                         </g>
                       );
                     })}
-                    <line x1={0} y1={170} x2={Math.max(ventasSeries.length * 28, 200)} y2={170} className="chart-axis" />
+                    <line x1={0} y1={170} x2={Math.max(ventasSeries.length * 24, 200)} y2={170} className="chart-axis" />
                   </svg>
                   <div className="chart-legend">
                     <span>Máx: {currency(Math.round(ventasMax))}</span>
                     <span>
                       {ventasRange === 'day' && 'Hoy'}
-                      {ventasRange === 'week' && 'Últimos 7 días'}
-                      {ventasRange === 'month' && 'Últimos 30 días'}
+                      {ventasRange === 'week' && '7 días'}
+                      {ventasRange === 'month' && '30 días'}
                     </span>
                   </div>
                 </>

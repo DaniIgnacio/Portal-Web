@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
 const GEOFERRE_LOGO_URL =
-'https://bhlsmetxwtqypdyxcmyk.supabase.co/storage/v1/object/sign/img/geo.PNG?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jOTYxYjljOS1mOWZmLTQzZDUtYWIzNS1iOWVmYTI4ODhlOWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvZ2VvLlBORyIsImlhdCI6MTc2NTQyMjc5OCwiZXhwIjoxNzk2OTU4Nzk4fQ.EHF9bKEzSj9uPxILyyPB2jOC-U-DL4Nm_gmXyxW3cAs';
+'https://bhlsmetxwtqypdyxcmyk.supabase.co/storage/v1/object/sign/img/1cee2a7d-f3fd-4395-adc3-ee9a7684127c.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jOTYxYjljOS1mOWZmLTQzZDUtYWIzNS1iOWVmYTI4ODhlOWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvMWNlZTJhN2QtZjNmZC00Mzk1LWFkYzMtZWU5YTc2ODQxMjdjLmpwZyIsImlhdCI6MTc2NjAzNDg2MSwiZXhwIjoxNzk3NTcwODYxfQ.wAMeV2jeKne_EEX0DuHq3THjRpAJDwvD_amA4CFpR0Y';
 
 
 interface SidebarProps {
