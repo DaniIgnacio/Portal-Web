@@ -23,8 +23,10 @@ type ClienteListado = Pick<
   'id_cliente' | 'auth_user_id' | 'nombre' | 'email' | 'telefono' | 'rut' | 'fecha_registro'
 >;
 
-const API_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = `${API_BASE_URL}/api`;
 
+ 
 const ClientesPage: React.FC = () => {
   const [clientes, setClientes] = useState<ClienteListado[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
