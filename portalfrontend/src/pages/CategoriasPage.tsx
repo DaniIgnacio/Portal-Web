@@ -7,8 +7,8 @@ import ConfirmationModal from '../components/common/ConfirmationModal';
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationContainer from '../components/common/Notification';
 
-// 1. URL Dinámica para Producción vs Local
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = `${API_BASE_URL}/api`;
 
 const CategoriasPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
