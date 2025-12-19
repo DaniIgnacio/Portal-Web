@@ -44,6 +44,7 @@ export default function PlanesPage() {
   const [planes, setPlanes] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [userId, setUserId] = useState<string | null>(null);
   const [ferreteriaId, setFerreteriaId] = useState<string | null>(null);
@@ -76,14 +77,22 @@ export default function PlanesPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        console.log("🔵 INICIANDO LOADDATA (sin localStorage)");
+        console.log("🔵 INICIANDO LOADDATA");
 
         // 0) Usuario autenticado
         const { data: userData, error: userErr } = await supabase.auth.getUser();
-        if (userErr) throw userErr;
+        console.log("👤 Usuario:", userData?.user?.id, "Error:", userErr);
+        
+        if (userErr) {
+          setError(`Error de autenticación: ${userErr.message}`);
+          setLoading(false);
+          return;
+        }
+        
         const authUser = userData?.user ?? null;
 
         if (!authUser?.id) {
+          setError("No hay usuario autenticado");
           setLoading(false);
           return;
         }
@@ -97,8 +106,16 @@ export default function PlanesPage() {
           .eq("id_usuario", authUser.id)
           .single();
 
-        if (userRowErr) throw userRowErr;
+        console.log("🏪 Ferretería:", userRow, "Error:", userRowErr);
+
+        if (userRowErr) {
+          setError(`Error al buscar ferretería: ${userRowErr.message}`);
+          setLoading(false);
+          return;
+        }
+        
         if (!userRow?.id_ferreteria) {
+          setError("Usuario sin ferretería asignada");
           setLoading(false);
           return;
         }
@@ -114,7 +131,11 @@ export default function PlanesPage() {
           .order("created_at", { ascending: false })
           .limit(1);
 
-        if (subErr) throw subErr;
+        console.log("📋 Suscripción:", subRows, "Error:", subErr);
+
+        if (subErr) {
+          console.warn("⚠️ Error al buscar suscripción (continuando):", subErr.message);
+        }
 
         const sub = Array.isArray(subRows) && subRows.length > 0 ? subRows[0] : null;
         let planCode: string | null = null;
@@ -125,24 +146,47 @@ export default function PlanesPage() {
             .select("code")
             .eq("id", sub.plan_id)
             .single();
-          if (planErr) throw planErr;
-          planCode = planRow?.code?.trim()?.toUpperCase() ?? null;
+          
+          console.log("🎯 Plan actual:", planRow, "Error:", planErr);
+          
+          if (planErr) {
+            console.warn("⚠️ Error al buscar plan actual:", planErr.message);
+          } else {
+            planCode = planRow?.code?.trim()?.toUpperCase() ?? null;
+          }
         }
 
         setCurrentPlanCode(planCode);
 
-        // 3) Catálogo de planes
+        // 3) Catálogo de planes - ESTE ES EL PASO CRÍTICO
+        console.log("🔍 Buscando planes en subscription_plan...");
+        
         const { data: plansDB, error: plansErr } = await supabase
           .from("subscription_plan")
           .select("*")
           .neq("code", "trial3m");
 
-        if (plansErr) throw plansErr;
+        console.log("📦 Planes obtenidos:", plansDB, "Error:", plansErr);
 
-        setPlanes(plansDB || []);
+        if (plansErr) {
+          setError(`Error al cargar planes: ${plansErr.message}`);
+          setLoading(false);
+          return;
+        }
+
+        if (!plansDB || plansDB.length === 0) {
+          setError("No hay planes disponibles en la base de datos");
+          setLoading(false);
+          return;
+        }
+
+        setPlanes(plansDB);
         setLoading(false);
+        console.log("✅ Planes cargados exitosamente:", plansDB.length);
+        
       } catch (e: any) {
-        console.error("❌ PLANES ERROR:", e);
+        console.error("❌ ERROR GENERAL:", e);
+        setError(`Error inesperado: ${e.message}`);
         setLoading(false);
       }
     }
@@ -154,7 +198,10 @@ export default function PlanesPage() {
      CAMBIO DE PLAN (con hora Chile corregida)
   ---------------------------------------------------------- */
   async function handleSelectPlan(code: string) {
-    if (!ferreteriaId) return;
+    if (!ferreteriaId) {
+      alert("No se pudo identificar tu ferretería");
+      return;
+    }
 
     console.log("🔵 CAMBIANDO PLAN A:", code);
     setLoadingPlan(code);
@@ -167,7 +214,9 @@ export default function PlanesPage() {
         .eq("code", code)
         .single();
 
-      if (planErr || !planRow?.id) throw planErr || new Error("Plan no encontrado");
+      if (planErr || !planRow?.id) {
+        throw planErr || new Error("Plan no encontrado");
+      }
 
       // 2) Crear nuevo registro con hora Chile REAL
       const ahoraCL = nowChileISO();
@@ -190,14 +239,44 @@ export default function PlanesPage() {
 
       const normalized = code.trim().toUpperCase();
       setCurrentPlanCode(normalized);
-    } catch (err) {
+      alert(`Plan ${normalized} activado exitosamente`);
+      
+    } catch (err: any) {
       console.error("🔥 ERROR CAMBIO PLAN:", err);
+      alert(`Error al cambiar plan: ${err.message}`);
     } finally {
       setLoadingPlan(null);
     }
   }
 
-  if (loading) return <p>Cargando planes...</p>;
+  if (loading) {
+    return (
+      <div className="planes-container">
+        <p>Cargando planes...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="planes-container">
+        <h2 style={{ color: 'red' }}>Error al cargar planes</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  if (planes.length === 0) {
+    return (
+      <div className="planes-container">
+        <h2>No hay planes disponibles</h2>
+        <p>Por favor, contacta al administrador.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="planes-container">
