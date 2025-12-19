@@ -8,8 +8,8 @@ import ConfirmationModal from '../components/common/ConfirmationModal';
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationContainer from '../components/common/Notification';
 
-// La URL de tu backend
-const API_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = `${API_BASE_URL}/api`;
 
 const FerreteriasPage = () => {
   const [ferreterias, setFerreterias] = useState<Ferreteria[]>([]);
