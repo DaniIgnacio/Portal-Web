@@ -6,6 +6,8 @@ import { useNotifications } from '../../hooks/useNotifications';
 import NotificationContainer from '../common/Notification';
 import usePasswordStrength from '../../hooks/usePasswordStrength';
 import { supabase } from '../../supabaseClient';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const EyeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="20"
@@ -511,13 +513,13 @@ const Registro: React.FC<RegistroProps> = ({ onRegisterSuccess }) => {
         horario: horarioJson,
       };
 
-      const response = await fetch('http://localhost:5000/api/register-full', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registerDataToBackend),
-      });
+      const response = await fetch(`${API_BASE_URL}/api/register-full`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(registerDataToBackend),
+});
 
       const data = await response.json();
 
