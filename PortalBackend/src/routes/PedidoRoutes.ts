@@ -29,11 +29,16 @@ router.get('/pedidos', verifyToken, async (req: any, res) => {
     const { id_ferreteria } = req.user;
 
     try {
-        // JOIN con producto para obtener el nombre
+        // JOIN con producto para nombre y con cliente_app para datos del cliente
         const { data, error } = await supabase
             .from('pedido')
             .select(`
                 *,
+                cliente:cliente_app (
+                    nombre,
+                    email,
+                    telefono
+                ),
                 detalle_pedido:detalle_pedido (
                     id_detalle_pedido,
                     id_pedido,
@@ -54,13 +59,20 @@ router.get('/pedidos', verifyToken, async (req: any, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        // Transformar los datos para aplanar el nombre del producto
-        const pedidosTransformados = data?.map(pedido => ({
+        // Transformar los datos para aplanar el nombre del producto y del cliente
+        const pedidosTransformados = data?.map((pedido: any) => ({
             ...pedido,
+            // Aplanamos datos del cliente para que el frontend los lea directo
+            nombre_cliente: pedido.cliente?.nombre || 'Cliente Desconocido',
+            email_cliente: pedido.cliente?.email || '',
+            telefono_cliente: pedido.cliente?.telefono || '',
+            cliente: undefined, // Limpiamos el objeto anidado
+
+            // Aplanamos el detalle del producto
             detalle_pedido: pedido.detalle_pedido?.map((detalle: any) => ({
                 ...detalle,
-                nombre: detalle.producto?.nombre || 'Producto sin nombre',
-                // Removemos el objeto anidado producto después de extraer el nombre
+                // Mapeamos a 'nombre_producto' que es lo que espera tu interfaz React
+                nombre_producto: detalle.producto?.nombre || 'Producto sin nombre',
                 producto: undefined
             }))
         }));
@@ -82,6 +94,11 @@ router.get('/pedidos/:id', verifyToken, async (req: any, res) => {
             .from('pedido')
             .select(`
                 *,
+                cliente:cliente_app (
+                    nombre,
+                    email,
+                    telefono
+                ),
                 detalle_pedido:detalle_pedido (
                     *,
                     producto:producto (
@@ -98,12 +115,17 @@ router.get('/pedidos/:id', verifyToken, async (req: any, res) => {
             return res.status(404).json({ error: 'Pedido no encontrado' });
         }
 
-        // Transformar para aplanar el nombre
+        // Transformar para aplanar nombres
         const pedidoTransformado = {
             ...data,
+            nombre_cliente: data.cliente?.nombre || 'Cliente Desconocido',
+            email_cliente: data.cliente?.email || '',
+            telefono_cliente: data.cliente?.telefono || '',
+            cliente: undefined,
+            
             detalle_pedido: data.detalle_pedido?.map((detalle: any) => ({
                 ...detalle,
-                nombre: detalle.producto?.nombre || 'Producto sin nombre',
+                nombre_producto: detalle.producto?.nombre || 'Producto sin nombre',
                 producto: undefined
             }))
         };
@@ -147,7 +169,9 @@ router.put('/pedidos/:id/estado', verifyToken, async (req: any, res) => {
 
         // 2. Validar transición
         const permitidos = FLUJO_ESTADOS[pedido.estado];
+        // Nota: Permitimos re-enviar el mismo estado por seguridad o forzamos validación estricta
         if (!permitidos || !permitidos.includes(estado)) {
+             // Opcional: Puedes comentar esto si quieres permitir saltos manuales para pruebas
             return res.status(400).json({
                 error: `No se puede cambiar de '${pedido.estado}' a '${estado}'`,
             });
