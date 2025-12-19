@@ -1,114 +1,204 @@
+/* --- Contenedor Principal (Layout de Columnas) --- */
 .pedidos-page {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-xl, 24px);
+  background-color: #f8f9fa; /* Fondo gris muy suave para la página */
+  min-height: 100vh;
+}
+
+.kanban-container {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  align-items: flex-start;
+  padding-bottom: 20px; /* Espacio para scrollbar si es necesario */
+}
+
+/* --- Columna (ej: En Preparación) --- */
+.kanban-column {
+  background-color: #fffbf0; /* Fondo crema suave para columna preparación */
+  /* Usa #f0f9ff para columna azul/pagado si quieres variar */
+  border: 1px solid #f0f0f0;
+  border-radius: 16px;
+  min-width: 320px;
+  width: 100%;
+  max-width: 380px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: 16px;
 }
 
-.pedidos-table-container {
-  max-width: 100%;
-  overflow-x: auto;
-  margin-top: var(--spacing-sm);
+/* Encabezado de la Columna */
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #F59E0B; /* Línea amarilla/naranja */
+  margin-bottom: 4px;
 }
 
-.pedidos-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--color-white);
-  box-shadow: var(--shadow-md);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--color-border);
-  overflow: hidden;
+.column-header h3 {
+  color: #4B5563;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
 }
 
-.pedidos-table th,
-.pedidos-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--color-border);
-  text-align: left;
-}
-
-.pedidos-table th {
-  background: var(--color-secondary-light);
+.column-count {
+  background-color: #F59E0B;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.9rem;
-  color: var(--color-text-soft);
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  font-weight: bold;
 }
 
-.pedido-row:hover {
-  background: var(--color-primary-soft);
+/* --- Tarjeta de Pedido Individual --- */
+.pedido-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.pedido-details-row td {
-  background: var(--color-secondary-light);
+.pedido-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-.detalle-table {
-  width: 100%;
-  border-collapse: collapse;
+/* Fila Superior: ID y Badge */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.detalle-table th,
-.detalle-table td {
-  padding: 10px 12px;
-  font-size: 0.92rem;
-  border-bottom: 1px solid var(--color-border);
+.order-id {
+  font-family: monospace;
+  color: #6B7280;
+  font-size: 0.9rem;
 }
 
-.btn-small {
-  padding: 8px 12px;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--border-radius-md);
-  background: var(--color-primary);
-  color: var(--color-text-inverted);
-  cursor: pointer;
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: white;
+}
+
+.status-badge.pagado { background-color: #3B82F6; } /* Azul */
+.status-badge.preparando { background-color: #F59E0B; } /* Naranja */
+
+/* Fila Info: Fecha y Precio */
+.card-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-date {
+  color: #6B7280;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.order-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+/* Cliente */
+.client-info {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 10px;
+  color: #374151;
   font-weight: 600;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.btn-small:hover {
-  background: var(--color-primary-strong);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.action-buttons {
-  display: inline-flex;
-  gap: var(--spacing-sm);
-}
-
-.action-button {
-  padding: 7px 14px;
-  border-radius: 10px;
-  font-size: 0.85rem;
+/* Enlace Ver Productos */
+.toggle-products {
+  color: #3B82F6;
+  font-size: 0.9rem;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  background: none;
   border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.delete-button {
-  background: rgba(239, 68, 68, 0.12);
-  color: #b91c1c;
+/* --- Botones de Acción --- */
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
 }
 
-.delete-button:hover {
-  background: rgba(239, 68, 68, 0.2);
-  box-shadow: 0 8px 18px rgba(239, 68, 68, 0.2);
+.btn-card {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-@media (max-width: 600px) {
-  .pedidos-page {
-    padding: var(--spacing-lg);
+.btn-card:hover { opacity: 0.9; }
+
+.btn-blue {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.btn-green {
+  background-color: #10B981;
+  color: white;
+}
+
+.btn-ticket {
+  background-color: #F3F4F6;
+  color: #4B5563;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .kanban-container {
+    flex-direction: column;
+    align-items: stretch;
   }
-
-  .pedidos-table th,
-  .pedidos-table td {
-    padding: 10px 12px;
-  }
-
-  .detalle-table th,
-  .detalle-table td {
-    padding: 8px 10px;
+  .kanban-column {
+    min-width: 100%;
   }
 }

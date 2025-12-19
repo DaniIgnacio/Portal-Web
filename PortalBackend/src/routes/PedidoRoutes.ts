@@ -29,10 +29,23 @@ router.get('/pedidos', verifyToken, async (req: any, res) => {
     const { id_ferreteria } = req.user;
 
     try {
-        // Seleccionamos campos importantes y agregamos la relación detalle_pedido si existe
+        // JOIN con producto para obtener el nombre
         const { data, error } = await supabase
             .from('pedido')
-            .select(`*, detalle_pedido:detalle_pedido(*)`)
+            .select(`
+                *,
+                detalle_pedido:detalle_pedido (
+                    id_detalle_pedido,
+                    id_pedido,
+                    id_producto,
+                    cantidad,
+                    precio_unitario_venta,
+                    precio_unitario_compra,
+                    producto:producto (
+                        nombre
+                    )
+                )
+            `)
             .eq('id_ferreteria', id_ferreteria)
             .order('fecha_pedido', { ascending: false });
 
@@ -41,7 +54,18 @@ router.get('/pedidos', verifyToken, async (req: any, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        res.json(data);
+        // Transformar los datos para aplanar el nombre del producto
+        const pedidosTransformados = data?.map(pedido => ({
+            ...pedido,
+            detalle_pedido: pedido.detalle_pedido?.map((detalle: any) => ({
+                ...detalle,
+                nombre: detalle.producto?.nombre || 'Producto sin nombre',
+                // Removemos el objeto anidado producto después de extraer el nombre
+                producto: undefined
+            }))
+        }));
+
+        res.json(pedidosTransformados);
     } catch (err) {
         console.error('Error interno al obtener pedidos:', err);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -56,7 +80,15 @@ router.get('/pedidos/:id', verifyToken, async (req: any, res) => {
     try {
         const { data, error } = await supabase
             .from('pedido')
-            .select(`*, detalle_pedido:detalle_pedido(*)`)
+            .select(`
+                *,
+                detalle_pedido:detalle_pedido (
+                    *,
+                    producto:producto (
+                        nombre
+                    )
+                )
+            `)
             .eq('id_pedido', id)
             .eq('id_ferreteria', id_ferreteria)
             .single();
@@ -66,18 +98,29 @@ router.get('/pedidos/:id', verifyToken, async (req: any, res) => {
             return res.status(404).json({ error: 'Pedido no encontrado' });
         }
 
-        res.json(data);
+        // Transformar para aplanar el nombre
+        const pedidoTransformado = {
+            ...data,
+            detalle_pedido: data.detalle_pedido?.map((detalle: any) => ({
+                ...detalle,
+                nombre: detalle.producto?.nombre || 'Producto sin nombre',
+                producto: undefined
+            }))
+        };
+
+        res.json(pedidoTransformado);
     } catch (err) {
         console.error('Error interno al obtener el pedido:', err);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
-// PUT: Actualizar estado del pedido (flujo simple)
+// PUT: Actualizar estado del pedido (flujo simple + correo)
 router.put('/pedidos/:id/estado', verifyToken, async (req: any, res) => {
     const { id_ferreteria } = req.user;
     const { id } = req.params;
     const { estado } = req.body;
+    console.log('👉 Estado recibido:', estado);
 
     const FLUJO_ESTADOS: Record<string, string[]> = {
         pagado: ['preparando'],
@@ -90,10 +133,10 @@ router.put('/pedidos/:id/estado', verifyToken, async (req: any, res) => {
     }
 
     try {
-        // 1. Buscar pedido y validar pertenencia
+        // 1. Buscar pedido
         const { data: pedido, error } = await supabase
             .from('pedido')
-            .select('estado')
+            .select('estado, id_cliente')
             .eq('id_pedido', id)
             .eq('id_ferreteria', id_ferreteria)
             .single();
@@ -102,9 +145,8 @@ router.put('/pedidos/:id/estado', verifyToken, async (req: any, res) => {
             return res.status(404).json({ error: 'Pedido no encontrado' });
         }
 
-        // 2. Validar transición de estado
+        // 2. Validar transición
         const permitidos = FLUJO_ESTADOS[pedido.estado];
-
         if (!permitidos || !permitidos.includes(estado)) {
             return res.status(400).json({
                 error: `No se puede cambiar de '${pedido.estado}' a '${estado}'`,
@@ -114,16 +156,49 @@ router.put('/pedidos/:id/estado', verifyToken, async (req: any, res) => {
         // 3. Actualizar estado
         const { error: updateError } = await supabase
             .from('pedido')
-            .update({
-                estado,
-                
-            })
+            .update({ estado })
             .eq('id_pedido', id)
             .eq('id_ferreteria', id_ferreteria);
 
         if (updateError) {
             console.error('Error actualizando estado:', updateError);
             return res.status(500).json({ error: updateError.message });
+        }
+
+        // 4. 👉 SI queda listo para retiro, enviar correo
+        if (estado === 'listo_retiro') {
+            console.log('🚀 Entró a listo_retiro, enviando correo');
+            // Obtener datos del cliente
+            const { data: cliente } = await supabase
+                .from('cliente_app')
+                .select('email, nombre')
+                .eq('id_cliente', pedido.id_cliente)
+                .single();
+            console.log('📧 Cliente obtenido:', cliente);
+
+            if (cliente?.email) {
+                console.log('📤 Llamando Edge Function...');
+
+                const response = await fetch(
+                    'https://bhlsmetxwtqypdyxcmyk.supabase.co/functions/v1/pedido-listo-retiro',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+                        },
+                        body: JSON.stringify({
+                            id_pedido: id,
+                            email: cliente.email,
+                            nombre: cliente.nombre,
+                        }),
+                    }
+                );
+                const text = await response.text();
+                console.log('📨 Respuesta Edge Function:', text);
+            } else {
+                console.warn('Pedido listo para retiro, pero cliente sin email');
+            }
         }
 
         res.json({
@@ -136,6 +211,5 @@ router.put('/pedidos/:id/estado', verifyToken, async (req: any, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-
 
 export default router;

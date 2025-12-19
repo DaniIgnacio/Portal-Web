@@ -66,20 +66,32 @@ function App() {
       setIsAdmin(false);
     }
   };
-    const loadSubscription = async (id_ferreteria: string) => {
-    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/suscripcion/get`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id_ferreteria }),
-    });
+  const loadSubscription = async (id_ferreteria: string) => {
+      // CAMBIO AQUÍ: Agregamos '/api' y aseguramos la URL completa
+      // Puedes usar la variable de entorno si la tienes configurada con /api, 
+      // pero para ir a la segura úsalo así por ahora:
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+      
+      try {
+        const res = await fetch(`${backendUrl}/api/suscripcion/get`, { // 👈 ¡OJO AQUÍ! Agregamos /api
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_ferreteria }),
+        });
 
-    const data = await res.json();
-    if (res.ok) {
-      setSubscription(data);
-    } else {
-      setSubscription(null);
+        if (res.ok) {
+          const data = await res.json();
+          setSubscription(data);
+        } else {
+          // Si falla (ej. 404), no intentamos parsear JSON para evitar el error de sintaxis
+          console.warn("No se pudo cargar la suscripción", res.status);
+          setSubscription(null);
+        }
+      } catch (error) {
+        console.error("Error de red al cargar suscripción", error);
+        setSubscription(null);
+      }
     }
-  };
 
 
 
