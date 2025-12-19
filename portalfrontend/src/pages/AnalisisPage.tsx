@@ -33,11 +33,7 @@ type Producto = {
   stock?: number;
 };
 
-// Configuración de API URL
-// Ajusta según tu framework:
-// - Create React App: REACT_APP_API_URL
-// - Vite: VITE_API_URL
-// - Next.js: NEXT_PUBLIC_API_URL
+// Configuración de API URL para Create React App
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const API_URL = `${API_BASE_URL}/api`;
 
@@ -257,32 +253,58 @@ const AnalisisPage: React.FC = () => {
       const ref = new Date(now);
       ref.setDate(ref.getDate() - i);
       const dayStr = ref.toISOString().slice(0, 10);
-      const total = filtroPorCanal(pedidos)
-        .filter((p) => p.fecha_pedido?.startsWith(dayStr))
-        .reduce((acc, p) => acc + (p.monto_total || 0), 0);
+      
+      const pedidosFiltrados = filtroPorCanal(pedidos);
+      const pedidosDelDia = pedidosFiltrados.filter((p) => {
+        if (!p.fecha_pedido) return false;
+        // Normalizar fecha para comparar solo año-mes-día
+        const pedidoDate = p.fecha_pedido.split('T')[0];
+        return pedidoDate === dayStr;
+      });
+      
+      const total = pedidosDelDia.reduce((acc, p) => acc + (p.monto_total || 0), 0);
       const label = ref.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
+      
       series.push({ label, total });
     }
+    
+    console.log('📊 Series de ventas generadas:', series);
     return series;
   };
 
   const ventasSeries = useMemo(() => {
-    if (ventasRange === 'day') return buildVentasSeries(1);
-    if (ventasRange === 'week') return buildVentasSeries(7);
-    return buildVentasSeries(30);
+    let series;
+    if (ventasRange === 'day') series = buildVentasSeries(1);
+    else if (ventasRange === 'week') series = buildVentasSeries(7);
+    else series = buildVentasSeries(30);
+    
+    console.log('📈 Ventas Range:', ventasRange);
+    console.log('📈 Series calculadas:', series.length, 'días');
+    console.log('📈 Totales:', series.map(s => s.total));
+    
+    return series;
   }, [ventasRange, pedidos, ventasChannel]);
 
-  const ventasMax = useMemo(
-    () => Math.max(...ventasSeries.map((s) => s.total), 1),
-    [ventasSeries]
-  );
+  const ventasMax = useMemo(() => {
+    const max = Math.max(...ventasSeries.map((s) => s.total), 1);
+    console.log('📊 Valor máximo del gráfico:', max);
+    return max;
+  }, [ventasSeries]);
+  
+  console.log('Formato de fechas:', pedidos.slice(0, 3).map(p => p.fecha_pedido))
   
   const STEP = 48;
   const BAR_WIDTH = 18;
   const MIN_CHART_WIDTH = 360;
 
   const chartWidth = Math.max(ventasSeries.length * STEP, MIN_CHART_WIDTH);
-  console.log('AnalisisPage render');
+  
+  console.log('📊 Configuración del gráfico:', {
+    series: ventasSeries.length,
+    chartWidth,
+    ventasMax,
+    hasSales: ventasSeries.some(s => s.total > 0)
+  });
 
   return (
     <div className="analisis-page">
@@ -564,5 +586,7 @@ const AnalisisPage: React.FC = () => {
     </div>
   );
 };
+
+
 
 export default AnalisisPage;
