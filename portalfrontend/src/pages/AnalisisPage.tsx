@@ -3,7 +3,6 @@ import './AnalisisPage.css';
 import { useNotifications } from '../hooks/useNotifications';
 
 type Pedido = {
-  
   id_pedido: string;
   fecha_pedido: string;
   estado: string;
@@ -34,7 +33,9 @@ type Producto = {
   stock?: number;
 };
 
-const API_URL = 'http://localhost:5000/api';
+// MODIFICADO: Ahora busca la variable de entorno primero.
+// Si usas Next.js, asegúrate de tener NEXT_PUBLIC_API_URL en tu archivo .env
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const safeDate = (value?: string) => {
   const d = value ? new Date(value) : new Date();
@@ -559,4 +560,3 @@ const AnalisisPage: React.FC = () => {
 };
 
 export default AnalisisPage;
-

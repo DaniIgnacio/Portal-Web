@@ -1,3 +1,4 @@
+// src/pages/PedidosPage.tsx
 import React, { useEffect, useState } from 'react';
 import './PedidosPage.css';
 import ConfirmationModal from '../components/common/ConfirmationModal';
@@ -24,7 +25,10 @@ interface Pedido {
   detalle_pedido?: PedidoDetalle[];
 }
 
-const API_URL = 'http://localhost:5000/api';
+// --- CORRECCIÓN AQUÍ ---
+// Usamos la variable de entorno para saber si estamos en Vercel o en Localhost
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = `${BASE_URL}/api`;
 
 const PedidosPage: React.FC = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -35,19 +39,20 @@ const PedidosPage: React.FC = () => {
   const { addNotification } = useNotifications();
 
   /* =========================
-     HEADERS AUTH
-  ========================= */
+      HEADERS AUTH
+   ========================= */
   const getAuthHeaders = (): HeadersInit => {
     const token = localStorage.getItem('token');
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
   /* =========================
-     CARGAR PEDIDOS
-  ========================= */
+      CARGAR PEDIDOS
+   ========================= */
   const fetchPedidos = async () => {
     setIsLoading(true);
     try {
+      console.log("Cargando pedidos desde:", `${API_URL}/pedidos`); // Log para depurar
       const res = await fetch(`${API_URL}/pedidos`, {
         headers: getAuthHeaders(),
       });
@@ -67,11 +72,12 @@ const PedidosPage: React.FC = () => {
 
   useEffect(() => {
     fetchPedidos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* =========================
-     CAMBIO DE ESTADO
-  ========================= */
+      CAMBIO DE ESTADO
+   ========================= */
   const actualizarEstadoPedido = async (
     idPedido: string,
     nuevoEstado: string
@@ -104,8 +110,8 @@ const PedidosPage: React.FC = () => {
   };
 
   /* =========================
-     ELIMINAR PEDIDO
-  ========================= */
+      ELIMINAR PEDIDO
+   ========================= */
   const confirmDeletePedido = async () => {
     if (!pedidoToDelete) return;
 
@@ -134,8 +140,8 @@ const PedidosPage: React.FC = () => {
     iso ? new Date(iso).toLocaleString() : '-';
 
   /* =========================
-     RENDER
-  ========================= */
+      RENDER
+   ========================= */
   return (
     <div className="pedidos-page">
       <h2>Gestión de Pedidos</h2>
