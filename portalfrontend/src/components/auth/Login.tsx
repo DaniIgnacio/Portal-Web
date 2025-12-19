@@ -56,24 +56,26 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
   const { notifications, addNotification, dismissNotification } = useNotifications();
 
+  const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+        const response = await fetch(`${BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, contraseña: password }),
+        body: JSON.stringify({ email, contraseña: password }), // Fíjate si tu backend espera 'contraseña' o 'password'
       });
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al iniciar sesión');
-      }
+    throw new Error(data.error || 'Error al iniciar sesión');
+  }
 
       // Llama a la nueva función onLoginSuccess para actualizar el estado en App.tsx
       onLoginSuccess(data.user, data.token);
