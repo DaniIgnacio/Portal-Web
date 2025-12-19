@@ -14,7 +14,7 @@ type Pedido = {
     id_producto: string;
     cantidad: number;
     precio_unitario_venta?: number;
-    nombre:string;
+    nombre: string;
   }>;
 };
 
@@ -33,9 +33,13 @@ type Producto = {
   stock?: number;
 };
 
-// MODIFICADO: Ahora busca la variable de entorno primero.
-// Si usas Next.js, asegúrate de tener NEXT_PUBLIC_API_URL en tu archivo .env
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Configuración de API URL
+// Ajusta según tu framework:
+// - Create React App: REACT_APP_API_URL
+// - Vite: VITE_API_URL
+// - Next.js: NEXT_PUBLIC_API_URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = `${API_BASE_URL}/api`;
 
 const safeDate = (value?: string) => {
   const d = value ? new Date(value) : new Date();
@@ -60,6 +64,10 @@ const AnalisisPage: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log('🔵 API_BASE_URL:', API_BASE_URL);
+      console.log('🔵 API_URL completo:', API_URL);
+      console.log('🔵 Fetching pedidos desde:', `${API_URL}/pedidos`);
+      
       setIsLoading(true);
       try {
         const [pedidosRes, cotRes, prodRes] = await Promise.all([
@@ -70,32 +78,38 @@ const AnalisisPage: React.FC = () => {
         
         if (pedidosRes.ok) {
           const data = await pedidosRes.json();
-          console.log(
-            'DETALLE REAL:',
-            data?.[0]?.detalle_pedido?.[0]
-          );
+          console.log('✅ Pedidos recibidos:', data.length);
+          console.log('DETALLE REAL:', data?.[0]?.detalle_pedido?.[0]);
           setPedidos(Array.isArray(data) ? data : []);
+        } else {
+          console.error('❌ Error en pedidos:', pedidosRes.status, pedidosRes.statusText);
+          addNotification('Error al cargar pedidos', 'error');
         }
-        
 
         if (cotRes.ok) {
           const data = await cotRes.json();
+          console.log('✅ Cotizaciones recibidas:', data.length);
           setCotizaciones(Array.isArray(data) ? data : []);
+        } else {
+          console.error('❌ Error en cotizaciones:', cotRes.status, cotRes.statusText);
         }
+        
         if (prodRes.ok) {
           const data = await prodRes.json();
+          console.log('✅ Productos recibidos:', data.length);
           setProductos(Array.isArray(data) ? data : []);
+        } else {
+          console.error('❌ Error en productos:', prodRes.status, prodRes.statusText);
         }
 
       } catch (error) {
-        console.error('Error cargando datos para análisis', error);
+        console.error('❌ Error cargando datos para análisis:', error);
         addNotification('No se pudieron cargar todos los datos de análisis.', 'error');
       } finally {
         setIsLoading(false);
       }
-      
-      
     };
+    
     void fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -153,47 +167,44 @@ const AnalisisPage: React.FC = () => {
     return top;
   }, [pedidos]);
 
+  const productosMasVendidos = useMemo(() => {
+    const map = new Map<string, { qty: number; nombre: string }>();
 
-    const productosMasVendidos = useMemo(() => {
-      const map = new Map<string, { qty: number; nombre: string }>();
+    pedidos.forEach((p) => {
+      p.detalle_pedido?.forEach((d) => {
+        const id = String(d.id_producto);
+        const prev = map.get(id);
 
-      pedidos.forEach((p) => {
-        p.detalle_pedido?.forEach((d) => {
-          const id = String(d.id_producto);
-          const prev = map.get(id);
+        // Intentar obtener nombre del detalle o del array de productos
+        let nombreProducto = (d.nombre || '').trim();
+        if (!nombreProducto) {
+          const producto = productos.find(prod => prod.id_producto === d.id_producto);
+          nombreProducto = (producto?.nombre || '').trim();
+        }
+        
+        // Si aún no hay nombre, usar ID truncado
+        if (!nombreProducto) {
+          nombreProducto = id.length > 30 ? `ID: ${id.substring(0, 30)}...` : `ID: ${id}`;
+        }
 
-          // Intentar obtener nombre del detalle o del array de productos
-          let nombreProducto = (d.nombre || '').trim();
-          if (!nombreProducto) {
-            const producto = productos.find(prod => prod.id_producto === d.id_producto);
-            nombreProducto = (producto?.nombre || '').trim();
-          }
-          
-          // Si aún no hay nombre, usar ID truncado
-          if (!nombreProducto) {
-            nombreProducto = id.length > 30 ? `ID: ${id.substring(0, 30)}...` : `ID: ${id}`;
-          }
+        const prevName = (prev?.nombre || '').trim();
 
-          const prevName = (prev?.nombre || '').trim();
-
-          map.set(id, {
-            qty: (prev?.qty || 0) + d.cantidad,
-            nombre: prevName || nombreProducto,
-          });
+        map.set(id, {
+          qty: (prev?.qty || 0) + d.cantidad,
+          nombre: prevName || nombreProducto,
         });
       });
+    });
 
-      return Array.from(map.entries())
-        .map(([id, v]) => ({
-          id,
-          qty: v.qty,
-          nombre: v.nombre,
-        }))
-        .sort((a, b) => b.qty - a.qty)
-        .slice(0, 5);
-    }, [pedidos, productos]);
-
-
+    return Array.from(map.entries())
+      .map(([id, v]) => ({
+        id,
+        qty: v.qty,
+        nombre: v.nombre,
+      }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
+  }, [pedidos, productos]);
 
   // Índice de competitividad simulado
   const competitividad = useMemo(() => {
@@ -259,19 +270,19 @@ const AnalisisPage: React.FC = () => {
     if (ventasRange === 'day') return buildVentasSeries(1);
     if (ventasRange === 'week') return buildVentasSeries(7);
     return buildVentasSeries(30);
-  }, [ventasRange, pedidos]);
+  }, [ventasRange, pedidos, ventasChannel]);
 
   const ventasMax = useMemo(
     () => Math.max(...ventasSeries.map((s) => s.total), 1),
     [ventasSeries]
   );
+  
   const STEP = 48;
   const BAR_WIDTH = 18;
   const MIN_CHART_WIDTH = 360;
 
   const chartWidth = Math.max(ventasSeries.length * STEP, MIN_CHART_WIDTH);
   console.log('AnalisisPage render');
-
 
   return (
     <div className="analisis-page">
@@ -341,9 +352,7 @@ const AnalisisPage: React.FC = () => {
                 <div className="chart-empty">Sin ventas en el rango seleccionado.</div>
               ) : (
                 <>
-                  <div   className={`chart-scroll ${
-                      chartWidth <= MIN_CHART_WIDTH ? 'chart-center' : ''
-                    }`}>
+                  <div className={`chart-scroll ${chartWidth <= MIN_CHART_WIDTH ? 'chart-center' : ''}`}>
                     <svg
                       className="chart"
                       width={chartWidth}
@@ -421,7 +430,6 @@ const AnalisisPage: React.FC = () => {
                 </>
               )}
             </div>
-
           </section>
 
           <div className="metrics-grid">
@@ -490,7 +498,6 @@ const AnalisisPage: React.FC = () => {
           </section>
 
           <div className="panel-grid">
-
             <div className="panel">
               <div className="panel-header">
                 <h3>Ticket promedio</h3>
@@ -526,7 +533,6 @@ const AnalisisPage: React.FC = () => {
                       <span className="badge-rank">{idx + 1}</span>
                       <div className="list-col">
                         <span className="list-title">{p.nombre}</span>
-                        
                       </div>
                       <span className="list-value">{p.qty} uds</span>
                     </div>
