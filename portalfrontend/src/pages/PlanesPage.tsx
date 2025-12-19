@@ -100,13 +100,16 @@ export default function PlanesPage() {
         setUserId(authUser.id);
 
         // 1) Ferretería del usuario
-        const { data: userRow, error: userRowErr } = await supabase
+        console.log("🔍 Buscando usuario con id:", authUser.id);
+        
+        const { data: userRows, error: userRowErr } = await supabase
           .from("usuario")
           .select("id_ferreteria")
-          .eq("id_usuario", authUser.id)
-          .single();
+          .eq("id_usuario", authUser.id);
 
-        console.log("🏪 Ferretería:", userRow, "Error:", userRowErr);
+        console.log("🏪 Registros encontrados:", userRows?.length || 0);
+        console.log("🏪 Datos completos:", userRows);
+        console.log("🏪 Error:", userRowErr);
 
         if (userRowErr) {
           setError(`Error al buscar ferretería: ${userRowErr.message}`);
@@ -114,14 +117,24 @@ export default function PlanesPage() {
           return;
         }
         
+        if (!userRows || userRows.length === 0) {
+          setError(`No se encontró ferretería para el usuario. ID buscado: ${authUser.id}`);
+          setLoading(false);
+          return;
+        }
+
+        // Tomar el primer registro
+        const userRow = userRows[0];
+        
         if (!userRow?.id_ferreteria) {
-          setError("Usuario sin ferretería asignada");
+          setError("El usuario no tiene una ferretería asignada");
           setLoading(false);
           return;
         }
 
         const ferreId = userRow.id_ferreteria as string;
         setFerreteriaId(ferreId);
+        console.log("✅ Ferretería ID encontrada:", ferreId);
 
         // 2) Suscripción actual (última)
         const { data: subRows, error: subErr } = await supabase
