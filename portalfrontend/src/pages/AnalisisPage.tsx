@@ -292,7 +292,8 @@ const AnalisisPage: React.FC = () => {
   }, [ventasSeries]);
   
   console.log('Formato de fechas:', pedidos.slice(0, 3).map(p => p.fecha_pedido))
-  
+
+
   const STEP = 48;
   const BAR_WIDTH = 18;
   const MIN_CHART_WIDTH = 360;
