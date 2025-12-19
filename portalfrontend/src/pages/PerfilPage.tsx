@@ -46,7 +46,10 @@ const PerfilPage: React.FC = () => {
   const [stats, setStats] = useState({ totalProducts: 0, lowStockProducts: 0, activeOrders: 0 });
   const { addNotification } = useNotifications();
 
-  const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000/api';
+  const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// Aseguramos que la URL termine en /api
+  const API_URL = `${BASE_URL}/api`;
+
 
   const normalizeHorario = useCallback((horario: any): HorarioState => {
     const base = createEmptyHorario();

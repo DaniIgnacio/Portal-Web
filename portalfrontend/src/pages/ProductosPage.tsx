@@ -8,7 +8,10 @@ import ConfirmationModal from '../components/common/ConfirmationModal';
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationContainer from '../components/common/Notification';
 
-const API_URL = 'http://localhost:5000/api';
+
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// Aseguramos que la URL termine en /api
+const API_URL = `${BASE_URL}/api`;
 
 const ProductosPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);

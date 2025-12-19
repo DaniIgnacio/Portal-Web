@@ -1,5 +1,4 @@
-// src/pages/CategoriasPage.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import CategoryList, { Category } from '../components/categories/CategoryList';
 import AddEditCategoryModal from '../components/categories/AddEditCategoryModal';
 import AddIcon from '../components/common/AddIcon';
@@ -8,96 +7,113 @@ import ConfirmationModal from '../components/common/ConfirmationModal';
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationContainer from '../components/common/Notification';
 
-// La URL de tu backend
-const API_URL = 'http://localhost:5000/api';
+// 1. URL Dinámica para Producción vs Local
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const CategoriasPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  // Modales
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  
+  // Datos temporales
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [search, setSearch] = useState('');
 
   const { notifications, addNotification, dismissNotification } = useNotifications();
 
-  // --- Cargar categorías del backend al iniciar ---
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(`${API_URL}/categorias`);
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(Array.isArray(data) ? data : []);
-        } else {
-          console.error('Error al cargar categorías:', response.status);
-          setCategories([]);
-        }
-      } catch (error) {
-        console.error('Error al cargar las categorías:', error);
-        setCategories([]);
-        setError('Error al cargar las categorías del servidor');
-      } finally {
-        setIsLoading(false);
-      }
+  // 2. Helper para Headers de Autenticación
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     };
-    fetchCategories();
+  };
+
+  // 3. Función de Carga Reutilizable (para useEffect y botón Recargar)
+  const fetchCategories = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/categorias`, {
+        headers: getAuthHeaders() // GET también suele requerir auth
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(Array.isArray(data) ? data : []);
+      } else {
+        console.error('Error al cargar categorías:', response.status);
+        setError('No se pudieron cargar las categorías.');
+        setCategories([]);
+      }
+    } catch (error) {
+      console.error('Error de conexión:', error);
+      setError('Error de conexión con el servidor.');
+      setCategories([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Carga inicial
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   // --- Lógica para guardar (Crear o Editar) ---
   const handleSaveCategory = async (category: Category) => {
-    // --- LÓGICA PARA EDITAR UNA CATEGORÍA EXISTENTE ---
+    // --- EDICIÓN (PUT) ---
     if (categoryToEdit) {
-      console.log('2. Enviando actualización (PUT) al backend:', category);
       try {
         const response = await fetch(`${API_URL}/categorias/${category.id_categoria}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(), // Auth añadido
           body: JSON.stringify(category),
         });
 
         if (response.ok) {
           const updatedCategory = await response.json();
-          // Actualizamos el estado local reemplazando la categoría antigua por la nueva
-          setCategories(categories.map(c => (c.id_categoria === updatedCategory.id_categoria ? updatedCategory : c)));
+          setCategories(prev => prev.map(c => (c.id_categoria === updatedCategory.id_categoria ? updatedCategory : c)));
           addNotification(`Categoría "${updatedCategory.nombre}" actualizada correctamente.`, 'success');
+          closeModal();
         } else {
-          console.error('Falló la actualización de la categoría');
-          addNotification('Error al actualizar la categoría.', 'error');
+          throw new Error('Falló la actualización');
         }
       } catch (error) {
-        console.error('Error de red al actualizar:', error);
-        addNotification('Error de red al actualizar la categoría.', 'error');
+        console.error('Error al actualizar:', error);
+        addNotification('Error al actualizar la categoría.', 'error');
       }
     }
-    // --- LÓGICA PARA CREAR UNA CATEGORÍA NUEVA ---
+    // --- CREACIÓN (POST) ---
     else {
-      console.log('2. Enviando categoría nueva (POST) al backend:', category);
       try {
-        const { id_categoria, ...newCategoryData } = category; // Quitamos el id temporal
+        const { id_categoria, ...newCategoryData } = category;
         const response = await fetch(`${API_URL}/categorias`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(), // Auth añadido
           body: JSON.stringify(newCategoryData),
         });
 
         if (response.ok) {
-          const addedCategoryWithId = await response.json();
-          setCategories([...categories, addedCategoryWithId]);
-          addNotification(`Categoría "${addedCategoryWithId.nombre}" creada correctamente.`, 'success');
+          const addedCategory = await response.json();
+          setCategories(prev => [...prev, addedCategory]);
+          addNotification(`Categoría "${addedCategory.nombre}" creada correctamente.`, 'success');
+          closeModal();
         } else {
-          console.error('Falló la creación de la categoría');
-          addNotification('Error al crear la categoría.', 'error');
+          throw new Error('Falló la creación');
         }
       } catch (error) {
-        console.error('Error de red al crear:', error);
-        addNotification('Error de red al crear la categoría.', 'error');
+        console.error('Error al crear:', error);
+        addNotification('Error al crear la categoría.', 'error');
       }
     }
-    closeModal();
   };
 
   // --- Lógica para eliminar ---
@@ -110,23 +126,27 @@ const CategoriasPage = () => {
     if (!categoryToDelete) return;
 
     try {
-      const response = await fetch(`${API_URL}/categorias/${categoryToDelete.id_categoria}`, { method: 'DELETE' });
+      const response = await fetch(`${API_URL}/categorias/${categoryToDelete.id_categoria}`, { 
+        method: 'DELETE',
+        headers: getAuthHeaders() // Auth añadido
+      });
+
       if (response.ok) {
-        setCategories(categories.filter(c => c.id_categoria !== categoryToDelete.id_categoria));
+        setCategories(prev => prev.filter(c => c.id_categoria !== categoryToDelete.id_categoria));
         addNotification(`Categoría "${categoryToDelete.nombre}" eliminada correctamente.`, 'success');
       } else {
-        addNotification('Error al eliminar la categoría.', 'error');
+        throw new Error('Falló la eliminación');
       }
     } catch (error) {
-      console.error('Error de red al eliminar:', error);
-      addNotification('Error de red al eliminar la categoría.', 'error');
+      console.error('Error al eliminar:', error);
+      addNotification('Error al eliminar la categoría.', 'error');
+    } finally {
+      setIsConfirmModalOpen(false);
+      setCategoryToDelete(null);
     }
-
-    // Cerrar el modal y limpiar el estado
-    setIsConfirmModalOpen(false);
-    setCategoryToDelete(null);
   };
 
+  // --- UI Helpers ---
   const handleEdit = (category: Category) => {
     setCategoryToEdit(category);
     setIsModalOpen(true);
@@ -153,11 +173,9 @@ const CategoriasPage = () => {
 
   const totalCategorias = categories.length;
   const sinDescripcion = categories.filter((category) => !category.descripcion?.trim()).length;
-  const ultimaCategoria = useMemo(() => {
-    if (!categories.length) return null;
-    return categories[categories.length - 1];
-  }, [categories]);
+  const ultimaCategoria = categories.length > 0 ? categories[categories.length - 1] : null;
 
+  // --- Render Skeleton ---
   const renderSkeleton = () => (
     <div className="categorias-page">
       <section className="categorias-hero categorias-hero--loading">
@@ -229,7 +247,8 @@ const CategoriasPage = () => {
           </button>
           <button
             className="ghost-button ghost-button--light"
-            onClick={() => window.location.reload()}
+            // MEJORA: Usamos la función fetch en lugar de reload() para experiencia SPA suave
+            onClick={() => fetchCategories()} 
             type="button"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
@@ -276,7 +295,7 @@ const CategoriasPage = () => {
           {error ? (
             <div className="error-message">
               <p>{error}</p>
-              <button onClick={() => window.location.reload()} className="retry-button">
+              <button onClick={() => fetchCategories()} className="retry-button">
                 Reintentar
               </button>
             </div>

@@ -27,7 +27,10 @@ interface Pedido {
   detalle_pedido?: PedidoDetalle[];
 }
 
-const API_URL = 'http://localhost:5000/api';
+// --- CORRECCIÓN AQUÍ ---
+// Usamos la variable de entorno para saber si estamos en Vercel o en Localhost
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = `${BASE_URL}/api`;
 
 const PedidosMejorado: React.FC = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -51,6 +54,7 @@ const PedidosMejorado: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      console.log("Cargando pedidos desde:", `${API_URL}/pedidos`); // Log para depurar
       const res = await fetch(`${API_URL}/pedidos`, {
         headers: getAuthHeaders(),
       });
@@ -79,6 +83,7 @@ const PedidosMejorado: React.FC = () => {
 
   useEffect(() => {
     fetchPedidos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const actualizarEstadoPedido = async (
